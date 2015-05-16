@@ -1,0 +1,17 @@
+<div class="alert alert-danger" role="alert">{{err}}</div>
+    <table class="table table-hover">
+      <thead>
+        <th></th>
+        <th>Name</th>
+        <th>New Tags</th>
+        <th>Tags</th>
+      </thead>
+      <tbody>
+        <tr ng-repeat="file in Dir">
+          <td><input type="checkbox"></td>
+          <td>{{file.Filename}}</td>
+          <td><input type="text" placeholder="new tag"></td>
+          <td>{{file.SimpleTags}} {{file.ValueTags}} {{file.RangeTags}}</td>
+        </tr>
+      </tbody>
+    </table>

@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="de" ng-app="bebber">
+  <head>
+    <meta charset="utf-8">
+    <meta name="author" content="gr">
+    <title>Bebben</title>
+    <link href="public/ext/bootstrap/dist/css/bootstrap.min.css" 
+          rel="stylesheet" type="text/css">
+    <link href="public/css/my.css" rel="stylesheet" type="text/css">
+    <script src="public/ext/jquery/dist/jquery.min.js"></script>
+    <script src="public/ext/bootstrap/dist/js/bootstrap.min.js"></script>
+    <script src="public/ext/angular/angular.min.js"></script>
+    <script src="public/ext/angular-route/angular-route.min.js"></script>
+    <script src="public/ext/angular-resource/angular-resource.min.js"></script>
+    <script src="public/js/bebber-main.js"></script>
+    <script src="public/js/controller.js"></script>
+  </head>
+ 
+  <body ng-controller="mainCtrl">
+    <nav class="navbar navbar-default navbar-fixed-top">
+      <div class="navbar-header">
+        <a class="navbar-brand" href="#">Bebber</a>
+      </div>
+      <form class="navbar-form navbar-left">
+        <div class="btn-group">
+          <button type="button" class="btn btn-default" data-toggle="modal" data-target="#dirInput">load</button>
+          <button type="button" class="btn btn-default">export</button>
+
+        </div>
+      </form>
+    </nav>
+
+    <div ng-view></div>
+
+
+  <!-- File load modal -->
+  <div class="modal fade" id="dirInput" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+          <h4 class="modal-title" id="myModalLabel">Select Direcotry</h4>
+        </div>
+        <div class="modal-body">
+          <input type="text" class="form-control" placeholder="/path/to/dir" aria-describedby="sizing-addon1" ng-model="dirInput">
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+          <button type="button" class="btn btn-primary" ng-click="loadDirectory(dirInput)">Load Directory</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+
+  </body>
+
+</html>
