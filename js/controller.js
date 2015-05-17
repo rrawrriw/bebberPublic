@@ -14,14 +14,11 @@ bebberCtrl.controller('LoginCtrl', ['$scope', '$http',
 bebberCtrl.controller('mainCtrl', ['$scope', '$http',
     function($scope, $http) {
 
-      $scope.dirInput = '/home/t/Downloads';
-
       $scope.loadDirectory = function (dir) {
         $scope.errorMsg = false;
         $scope.successMsg = false;
         $http.post('/LoadDir/', '{"Dir": "'+ dir +'"}')
           .success(function (data) {
-            console.log(data);
             if (data.Status === 'fail') {
               $scope.errorMsg = true;
               $scope.err = data.Msg;
@@ -57,14 +54,9 @@ bebberCtrl.controller('mainCtrl', ['$scope', '$http',
             var that = this;
             that.tagErrorMsg = false;
 
-            console.log(filename)
-            console.log(newTags)
-            console.log(that.file.SimpleTags)
-
             var jsonReq = {Filename: filename, Tags: newTags}
             $http.post('/AddTags/', JSON.stringify(jsonReq))
               .success(function (data) {
-                console.log(data);
                 if (data.Status == 'fail') {
                   that.tagErrorMsg = data.Msg;
                 } else {
