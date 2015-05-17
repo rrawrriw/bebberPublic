@@ -1,17 +1,28 @@
-<div class="alert alert-danger" role="alert">{{err}}</div>
+<div class="alert alert-danger" role="alert" ng-show="errorMsg">
+  {{err}} <button ng-click="errorMsg=false">close</button>
+</div>
+<div class="alert alert-success" role="alert" ng-show="successMsg">
+  {{err}} <button ng-click="successMsg=false">close</button>
+</div>
     <table class="table table-hover">
       <thead>
-        <th></th>
         <th>Name</th>
         <th>New Tags</th>
         <th>Tags</th>
       </thead>
       <tbody>
-        <tr ng-repeat="file in Dir">
-          <td><input type="checkbox"></td>
+        <tr ng-repeat="file in dir">
           <td>{{file.Filename}}</td>
-          <td><input type="text" placeholder="new tag"></td>
-          <td>{{file.SimpleTags}} {{file.ValueTags}} {{file.RangeTags}}</td>
+          <td>
+            <input type="text" 
+                     placeholder="new tags comma sep" 
+                     ng-model="newTags" 
+                     ng-keypress="sendTags($event, file.Filename, newTags)" 
+                     ng-class="{'alert-warning': tagError}"
+                     ng-list>
+            <div class="tag-error-msg alert alert-warning" ng-show="tagErrorMsg">{{tagErrorMsg}}</div>   
+          </td>
+          <td>{{file.CurrTags.join(", ")}}</td>
         </tr>
       </tbody>
     </table>

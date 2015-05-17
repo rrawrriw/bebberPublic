@@ -1,2 +1,9 @@
-/* _ */
+/*_*/
+
 body { padding-top: 70px; }
+
+.tag-error-msg {
+  position: relative;
+  top: 1px;
+  left: 1px;
+}
