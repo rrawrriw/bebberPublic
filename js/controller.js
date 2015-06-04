@@ -6,12 +6,31 @@ var buildJsonTagsStr = function (tags) {
   return "" 
 }
 
-bebberCtrl.controller('LoginCtrl', ['$scope', '$http',
-    function($scope, $http) {
-      
-    }]);
+bebberCtrl.controller('initCtrl', function($scope) {
 
-bebberCtrl.controller('mainCtrl', ['$scope', '$http',
+});
+
+
+bebberCtrl.controller('loginCtrl', function($scope, $http, $location) {
+  
+  $scope.login = function () {
+    var user = {Username: $scope.username,
+                Password: $scope.password}
+    $http.post('/Login', user)
+      .success(function (data) {
+        if (data.Status === 'fail') {
+          console.log(data.Msg);
+        } else if (data.Status === 'success') {
+          $location.url('/dir/inbox');
+        }
+      }).error(function (data) {
+        console.log(data);
+      })
+  }
+
+});
+
+bebberCtrl.controller('dirCtrl', ['$scope', '$http',
     function($scope, $http) {
 
       $scope.loadDirectory = function (dir) {
@@ -44,6 +63,7 @@ bebberCtrl.controller('mainCtrl', ['$scope', '$http',
             }
           })
           .error(function (data, status) {
+            console.log("notallowd");
             $scope.errorMsg = true;
             $scope.err = data;
           });

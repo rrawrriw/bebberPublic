@@ -9,10 +9,13 @@ var bebberApp = angular.module("bebber", [
 bebberApp.config(['$routeProvider',
   function($routeProvider) {
     $routeProvider.
-      when('/', {
-        templateUrl: '/public/angular-tpls/main.html',
-        controller: 'mainCtrl'
-      });
+      when('/dir/:name', {
+        templateUrl: '/public/angular-tpls/dir.html',
+        controller: 'dirCtrl'
+      }).when('/login', {
+        templateUrl: '/public/angular-tpls/login.html',
+        controller: 'loginCtrl'
+      }).otherwise('/login');
   }]);
 
 /*
