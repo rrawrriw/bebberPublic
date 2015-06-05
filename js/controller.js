@@ -1,6 +1,6 @@
 'use strict'
 
-var bebberCtrl = angular.module('bebberCtrl', []);
+var bebberCtrl = angular.module('bebberCtrl', ['ngRoute', 'ngResource']);
 
 var buildJsonTagsStr = function (tags) {
   return "" 
@@ -11,87 +11,105 @@ bebberCtrl.controller('initCtrl', function($scope) {
 });
 
 
-bebberCtrl.controller('loginCtrl', function($scope, $http, $location) {
-  
-  $scope.login = function () {
-    var user = {Username: $scope.username,
-                Password: $scope.password}
-    $http.post('/Login', user)
-      .success(function (data) {
-        if (data.Status === 'fail') {
-          console.log(data.Msg);
-        } else if (data.Status === 'success') {
-          $location.url('/dir/inbox');
-        }
-      }).error(function (data) {
-        console.log(data);
-      })
-  }
-
-});
-
-bebberCtrl.controller('dirCtrl', ['$scope', '$http',
-    function($scope, $http) {
-
-      $scope.loadDirectory = function (dir) {
-        $scope.errorMsg = false;
-        $scope.successMsg = false;
-        $http.post('/LoadDir/', '{"Dir": "'+ dir +'"}')
-          .success(function (data) {
-            if (data.Status === 'fail') {
-              $scope.errorMsg = true;
-              $scope.err = data.Msg;
-            } else {
-              for (var x=0;x < data.Dir.length;x++) {
-                data.Dir[x].CurrTags = [];
-                angular.forEach(data.Dir[x].SimpleTags, function (value, key) {
-                  data.Dir[x].CurrTags.push(value.Tag);
-                });
-                angular.forEach(data.Dir[x].ValueTags, function (value, key) {
-                  data.Dir[x].CurrTags.push(value.Tag +":"+ value.Value);
-                });
-                angular.forEach(data.Dir[x].RangeTags, function (value, key) {
-                  var sd = value.Start.split("T")[0].split("-");
-                  var ed = value.End.split("T")[0].split("-");
-                  var sDate = sd[2] + sd[1] + sd[0];
-                  var eDate = ed[2] + ed[1] + ed[0];
-                  data.Dir[x].CurrTags.push(value.Tag +":"+ sDate +".."+ eDate);
-                });
-                data.Dir[x].CurrTags.sort()
-              }
-              $scope.dir = data.Dir;
-            }
-          })
-          .error(function (data, status) {
-            console.log("notallowd");
-            $scope.errorMsg = true;
-            $scope.err = data;
-          });
-      }
-
-      $scope.sendTags = function (keyEvent, filename, newTags) {
-          if (keyEvent.which === 13) {
-            var that = this;
-            that.tagErrorMsg = false;
-
-            var jsonReq = {Filename: filename, Tags: newTags}
-            $http.post('/AddTags/', JSON.stringify(jsonReq))
-              .success(function (data) {
-                if (data.Status == 'fail') {
-                  that.tagErrorMsg = data.Msg;
-                } else {
-                  that.newTags = "";
-                  angular.forEach(newTags, function (value, key) {
-                    that.file.CurrTags.push(value);
-                  });
-                }
-              })
-              .error(function (data, status) {
-                that.tagErrorMsg = data;
-              });
-             
+bebberCtrl.controller('loginCtrl', ['$scope', '$http', '$location', 'User', 'Boxes',
+  function($scope, $http, $location, User, Boxes) {
+    $scope.login = function () {
+      var user = {Username: $scope.username,
+                  Password: $scope.password}
+      $http.post('/Login', user)
+        .success(function (data) {
+          if (data.Status === 'fail') {
+            console.log(data.Msg);
+          } else if (data.Status === 'success') {
+            $scope.user = User;
+            $scope.boxes = Boxes;
+            $scope.user.get({'name':$scope.username},
+                             function(user) {
+                               console.log(user);
+                               angular.forEach(user.Dirs, function(v, i) {
+                                 $scope.boxes[i] = v
+                               });
+                             }
+                            )
+            $location.url('/dir/inbox');
           }
-      }
+        }).error(function (data) {
+          console.log(data);
+        })
+    }
 
+  }
+]);
 
-    }]);
+bebberCtrl.controller('dirCtrl', ['$scope', '$http', '$routeParams', 'Boxes',
+  function($scope, $http, $routeParams, Boxes) {
+    $scope.params = $routeParams;
+    $scope.boxes = Boxes;
+
+    $scope.loadDirectory = function (dir) {
+      $scope.errorMsg = false;
+      $scope.successMsg = false;
+      $http.post('/LoadDir/', '{"Dir": "'+ dir +'"}')
+        .success(function (data) {
+          if (data.Status === 'fail') {
+            $scope.errorMsg = true;
+            $scope.err = data.Msg;
+          } else if (data.Status === 'success') {
+            for (var x=0;x < data.Dir.length;x++) {
+              data.Dir[x].CurrTags = [];
+              angular.forEach(data.Dir[x].SimpleTags, function (value, key) {
+                data.Dir[x].CurrTags.push(value.Tag);
+              });
+              angular.forEach(data.Dir[x].ValueTags, function (value, key) {
+                data.Dir[x].CurrTags.push(value.Tag +":"+ value.Value);
+              });
+              angular.forEach(data.Dir[x].RangeTags, function (value, key) {
+                var sd = value.Start.split("T")[0].split("-");
+                var ed = value.End.split("T")[0].split("-");
+                var sDate = sd[2] + sd[1] + sd[0];
+                var eDate = ed[2] + ed[1] + ed[0];
+                data.Dir[x].CurrTags.push(value.Tag +":"+ sDate +".."+ eDate);
+              });
+              data.Dir[x].CurrTags.sort()
+            }
+            $scope.dir = data.Dir;
+          }
+        })
+        .error(function (data, status) {
+          console.log("notallowd");
+          $scope.errorMsg = true;
+          $scope.err = data;
+        });
+    }
+
+    $scope.sendTags = function (keyEvent, filename, newTags) {
+        if (keyEvent.which === 13) {
+          var that = this;
+          that.tagErrorMsg = false;
+
+          var jsonReq = {Filename: filename, Tags: newTags}
+          $http.post('/AddTags/', JSON.stringify(jsonReq))
+            .success(function (data) {
+              if (data.Status == 'fail') {
+                that.tagErrorMsg = data.Msg;
+              } else {
+                that.newTags = "";
+                angular.forEach(newTags, function (value, key) {
+                  that.file.CurrTags.push(value);
+                });
+              }
+            })
+            .error(function (data, status) {
+              that.tagErrorMsg = data;
+            });
+           
+        }
+    }
+
+    // Run LoadDirecotry
+    if ($scope.boxes[$scope.params.name]) {
+      $scope.loadDirectory($scope.boxes[$scope.params.name]);
+    }
+
+  }
+]);

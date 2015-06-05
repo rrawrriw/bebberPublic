@@ -16,7 +16,21 @@ bebberApp.config(['$routeProvider',
         templateUrl: '/public/angular-tpls/login.html',
         controller: 'loginCtrl'
       }).otherwise('/login');
-  }]);
+  }
+]);
+
+bebberApp.factory('User', ['$resource',
+  function($resource){
+    return $resource('/User/:name', {name:'@name'});
+  }
+]);
+
+bebberApp.factory('Boxes', 
+  function() {
+    return {};
+  }
+);
+
 
 /*
 bebberApp.config(['$httpProvider', 
