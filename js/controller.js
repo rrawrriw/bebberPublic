@@ -21,17 +21,14 @@ bebberCtrl.controller('loginCtrl', ['$scope', '$http', '$location', 'User', 'Box
           if (data.Status === 'fail') {
             console.log(data.Msg);
           } else if (data.Status === 'success') {
-            $scope.user = User;
             $scope.boxes = Boxes;
-            $scope.user.get({'name':$scope.username},
-                             function(user) {
-                               console.log(user);
-                               angular.forEach(user.Dirs, function(v, i) {
-                                 $scope.boxes[i] = v
-                               });
-                             }
-                            )
-            $location.url('/dir/inbox');
+            $scope.user = User;
+            $scope.user.get({'name':'a'}, function(user) {
+              angular.forEach(user.Dirs, function(v, i) {
+                $scope.boxes.addBox(i, v);
+              });
+            })
+            $location.url('/box/inbox');
           }
         }).error(function (data) {
           console.log(data);
@@ -41,75 +38,352 @@ bebberCtrl.controller('loginCtrl', ['$scope', '$http', '$location', 'User', 'Box
   }
 ]);
 
-bebberCtrl.controller('dirCtrl', ['$scope', '$http', '$routeParams', 'Boxes',
-  function($scope, $http, $routeParams, Boxes) {
+bebberCtrl.controller('boxCtrl', ['$scope', '$http', '$location', '$routeParams', '$timeout', 'pdfDelegate', 'User', 'Boxes', 
+  function($scope, $http, $location, $routeParams, $timeout, pdfDelegate, User, Boxes) {
     $scope.params = $routeParams;
     $scope.boxes = Boxes;
+    $scope.boxName = $scope.params.name;
+    $scope.selectedFiles = {};
 
-    $scope.loadDirectory = function (dir) {
-      $scope.errorMsg = false;
-      $scope.successMsg = false;
-      $http.post('/LoadDir/', '{"Dir": "'+ dir +'"}')
-        .success(function (data) {
-          if (data.Status === 'fail') {
-            $scope.errorMsg = true;
-            $scope.err = data.Msg;
-          } else if (data.Status === 'success') {
-            for (var x=0;x < data.Dir.length;x++) {
-              data.Dir[x].CurrTags = [];
-              angular.forEach(data.Dir[x].SimpleTags, function (value, key) {
-                data.Dir[x].CurrTags.push(value.Tag);
+    $scope.sendTags = function (keyEvent, filename, newTags) {
+      if (keyEvent.which === 13) {
+        var that = this;
+        that.tagErrorMsg = false;
+
+        var jsonReq = {Filename: filename, Tags: newTags}
+        $http.post('/AddTags/', JSON.stringify(jsonReq))
+          .success(function (data) {
+            if (data.Status == 'fail') {
+              that.tagErrorMsg = data.Msg;
+            } else {
+              that.newTags = "";
+              angular.forEach(newTags, function (value, key) {
+                that.file.CurrTags.push(value);
               });
-              angular.forEach(data.Dir[x].ValueTags, function (value, key) {
-                data.Dir[x].CurrTags.push(value.Tag +":"+ value.Value);
-              });
-              angular.forEach(data.Dir[x].RangeTags, function (value, key) {
-                var sd = value.Start.split("T")[0].split("-");
-                var ed = value.End.split("T")[0].split("-");
-                var sDate = sd[2] + sd[1] + sd[0];
-                var eDate = ed[2] + ed[1] + ed[0];
-                data.Dir[x].CurrTags.push(value.Tag +":"+ sDate +".."+ eDate);
-              });
-              data.Dir[x].CurrTags.sort()
             }
-            $scope.dir = data.Dir;
+          })
+          .error(function (data, status) {
+            that.tagErrorMsg = data;
+          });
+         
+      }
+    }
+
+    $scope.loadBox = function (boxName) {
+      if ($scope.boxes.existsBox(boxName)) {
+        $scope.boxName = boxName;
+        if ($scope.boxes.isCashed(boxName)) {
+          $scope.box = $scope.boxes.getCashedBox(boxName);
+        } else {
+          var err = $scope.boxes.loadBox(boxName, function (data, err) {
+            if (err !== undefined) {
+              console.log("Error LoadBox: "+ err);
+            } else {
+              $scope.box = data; 
+            }
+          });
+        }
+      }
+    }
+
+    $scope.selectAllFiles = function () {
+      angular.forEach($scope.selectedFiles, function(v,k) {
+        $scope.selectedFiles[k] = true;
+      });
+
+    }
+
+    $scope.unselectAllFiles = function () {
+      angular.forEach($scope.selectedFiles, function(v,k) {
+        $scope.selectedFiles[k] = false; 
+      });
+
+    }
+
+    $scope.moveFiles = function (from, to) {
+      angular.forEach($scope.selectedFiles, function(v,k) {
+        if (v) {
+          $scope.moveFile(from, to, k);
+        }
+      });
+    }
+
+    $scope.moveFile = function(from, to, file) {
+      $http.post("/MoveFile", {FromBox: from, ToBox: to, File: file})
+        .success(function (data) {
+          if (data.Status === "success") {
+            var err = $scope.boxes.moveFile(from, to, file);
+            if (err !== undefined) {
+              console.log(err);
+              return
+            }
+          } else {
+            console.log(data.Msg);
           }
+
         })
-        .error(function (data, status) {
-          console.log("notallowd");
-          $scope.errorMsg = true;
-          $scope.err = data;
+        .error(function (data, error) {
+          console.log(data);
         });
     }
 
-    $scope.sendTags = function (keyEvent, filename, newTags) {
-        if (keyEvent.which === 13) {
-          var that = this;
-          that.tagErrorMsg = false;
+    $scope.setupPdf = function () {
+      $scope.file = $scope.box[$scope.index];
+      $scope.pdfUrl = '/LoadFile/'+ $scope.boxName +'/'+ $scope.file.Filename;
+      pdfDelegate.$getByHandle('pdfFile').load($scope.pdfUrl);
+    }
 
-          var jsonReq = {Filename: filename, Tags: newTags}
-          $http.post('/AddTags/', JSON.stringify(jsonReq))
-            .success(function (data) {
-              if (data.Status == 'fail') {
-                that.tagErrorMsg = data.Msg;
-              } else {
-                that.newTags = "";
-                angular.forEach(newTags, function (value, key) {
-                  that.file.CurrTags.push(value);
-                });
-              }
-            })
-            .error(function (data, status) {
-              that.tagErrorMsg = data;
+    $timeout(function() { 
+      $scope.totalPages = pdfDelegate.$getByHandle('pdfFile').getPageCount();
+    }, 800);
+
+    $scope.nextPage = function() {
+      var pdfDoc = pdfDelegate.$getByHandle('pdfFile')
+      pdfDoc.next();
+      $scope.currentPage = pdfDoc.getCurrentPage();
+      $scope.totalPages = pdfDoc.getPageCount();
+    }
+
+    $scope.prevPage = function() {
+      var pdfDoc = pdfDelegate.$getByHandle('pdfFile')
+      pdfDoc.prev();
+      $scope.currentPage = pdfDoc.getCurrentPage();
+      $scope.totalPages = pdfDoc.getPageCount();
+    }
+
+    $scope.zoomIn = function() {
+      pdfDelegate.$getByHandle('pdfFile').zoomIn();
+    }
+
+    $scope.zoomOut = function() {
+      pdfDelegate.$getByHandle('pdfFile').zoomOut();
+    }
+
+    $scope.showSingleView = function (boxName) {
+      $location.url('/box/'+ boxName +'/singleview');
+    }
+
+    // dev
+    $scope.user = User;
+    $scope.user.get({'name':'a'}, function(user) {
+      angular.forEach(user.Dirs, function(v, i) {
+        $scope.boxes.addBox(i, v);
+      });
+      // Run LoadDirecotry
+      var boxName = $scope.params.name
+      if ($scope.boxes.existsBox(boxName)) {
+        var err = $scope.boxes.loadBox(boxName, function (data, err) {
+          if (err !== undefined) {
+            console.log("Error LoadBox: "+ err);
+          } else {
+            $scope.box = $scope.boxes.getCashedBox(boxName); 
+            $scope.boxNames = $scope.boxes.getBoxNames();
+          }
+        });
+      }
+    })
+    // dev end
+
+
+  }
+]);
+
+
+bebberCtrl.controller('boxSingleViewCtrl', ['$scope', '$http', '$routeParams', '$location', '$timeout', '$document', 'pdfDelegate', 'Boxes', 'User',
+  function ($scope, $http, $routeParams, $location, $timeout, $document, pdfDelegate, Boxes, User) {
+    $scope.params = $routeParams;
+    $scope.boxName = $scope.params.name;
+    $scope.boxes = Boxes;
+    $scope.index = 0;
+    $scope.currentPage = 1;
+    $scope.totalPages = '?';
+    $scope.file = '';
+
+    $document.keydown(function (keyEvent) {
+      console.log("actionkey");
+      console.log(keyEvent);
+      if (keyEvent.which === 37) {
+        $scope.loadPrevFile();
+
+      } else if (keyEvent.which === 39) {
+        $scope.loadNextFile();
+
+      } else if (keyEvent.which === 65) {
+        console.log("archiv");
+        $scope.moveFile($scope.boxName, 'archiv', $scope.file);
+      } else {
+        angular.element('#newtags').focus();
+      }
+    });
+
+    $scope.actionKeys = function (keyEvent) {
+    }
+
+    $scope.showListView = function () {
+      $location.url('/box/'+ $scope.boxName);
+    }
+    
+    $scope.setupPdf = function () {
+      $scope.file = $scope.box[$scope.index];
+      $scope.pdfUrl = '/LoadFile/'+ $scope.boxName +'/'+ $scope.file.Filename;
+      $timeout(function() {
+        pdfDelegate.$getByHandle('pdfFile').load($scope.pdfUrl);
+        $timeout(function() { 
+          $scope.totalPages = pdfDelegate.$getByHandle('pdfFile').getPageCount();
+        }, 800);
+      }, 400);
+      /*
+      PDFJS.disableWorker = true;
+      $http.get($scope.pdfUrl)
+        .success(function (data) {
+          for(var x=0;x<11;x++) {
+            //console.log(data[x]);
+          }
+          var pdf = PDFJS.getDocument({data: data}).then(function (pdf) {;
+            console.log(pdf);
+            pdf.getPage(1).then(function(page) {
+              var scale = 1;
+              var viewport = page.getViewport(scale);
+
+              var canvas = document.getElementById('pdf-files');
+              var context = canvas.getContext('2d');
+              canvas.height = viewport.height;
+              canvas.width = viewport.width;
+
+              var renderContext = {
+                canvasContext: context,
+                viewport: viewport
+              };
+              page.render(renderContext);
+
             });
-           
-        }
+          });
+        })
+        .error(function (data) {
+
+        });
+        */
     }
 
-    // Run LoadDirecotry
-    if ($scope.boxes[$scope.params.name]) {
-      $scope.loadDirectory($scope.boxes[$scope.params.name]);
+    $scope.nextPage = function() {
+      var pdfDoc = pdfDelegate.$getByHandle('pdfFile')
+      pdfDoc.next();
+      $scope.currentPage = pdfDoc.getCurrentPage();
+      $scope.totalPages = pdfDoc.getPageCount();
     }
+
+    $scope.prevPage = function() {
+      var pdfDoc = pdfDelegate.$getByHandle('pdfFile')
+      pdfDoc.prev();
+      $scope.currentPage = pdfDoc.getCurrentPage();
+      $scope.totalPages = pdfDoc.getPageCount();
+    }
+
+    $scope.zoomIn = function() {
+      pdfDelegate.$getByHandle('pdfFile').zoomIn();
+    }
+
+    $scope.zoomOut = function() {
+      pdfDelegate.$getByHandle('pdfFile').zoomOut();
+    }
+
+    $scope.loadNextFile = function () {
+      if ($scope.box.length === $scope.index+1) {
+        $scope.index = 0;
+      } else {
+        $scope.index += 1;
+      }
+      $scope.setupPdf();
+      $scope.currentPage = 1;
+      $scope.totalPages = '?';
+    }
+
+    $scope.loadPrevFile = function () {
+      if ($scope.index-1 < 0) {
+        $scope.index = $scope.box.length-1;
+      } else {
+        $scope.index -= 1;
+      }
+      $scope.setupPdf();
+      $scope.currentPage = 1;
+      $scope.totalPages = '?';
+    }
+
+    $scope.sendTags = function (keyEvent, filename, newTags) {
+      if (keyEvent.which === 13) {
+        var that = this;
+        that.tagErrorMsg = false;
+
+        var jsonReq = {Filename: filename, Tags: newTags}
+        $http.post('/AddTags/', JSON.stringify(jsonReq))
+          .success(function (data) {
+            if (data.Status == 'fail') {
+              console.log(data);
+              that.tagErrorMsg = data.Msg;
+            } else {
+              that.newTags = "";
+              angular.forEach(newTags, function (value, key) {
+                that.file.CurrTags.push(value);
+              });
+            }
+          })
+          .error(function (data, status) {
+            that.tagErrorMsg = data;
+          });
+         
+      }
+    }
+
+    $scope.moveFile = function(from, to, file) {
+      $http.post("/MoveFile", {FromBox: from, ToBox: to, File: file})
+        .success(function (data) {
+          if (data.Status === "success") {
+            var err = $scope.boxes.moveFile(from, to, file);
+            if (err !== undefined) {
+              console.log(err);
+              return
+            }
+            $scope.loadNextFile();
+          } else {
+            conosle.log(data.Msg);
+          }
+
+        })
+        .error(function (data, error) {
+          conosle.log(data);
+        });
+    }
+
+    // dev
+    $scope.user = User;
+    if ($scope.boxes.isCashed($scope.boxName) === false) {
+      $scope.user.get({'name':'a'}, function(user) {
+        angular.forEach(user.Dirs, function(v, i) {
+          $scope.boxes.addBox(i, v);
+        });
+        // Run LoadDirecotry
+        var boxName = $scope.boxName
+        var err = $scope.boxes.loadBox(boxName, function (data, err) {
+          if (err !== undefined) {
+            console.log("Error LoadBox: "+ err);
+          } else {
+            console.log("loadbox");
+            $scope.box = data;
+            $scope.boxNames = $scope.boxes.getBoxNames();
+            $scope.index = 0;
+            $scope.setupPdf();
+          }
+        });
+      })
+    } else {
+      console.log("cashedbox");
+      $scope.box = $scope.boxes.getCashedBox($scope.boxName);
+      $scope.boxNames = $scope.boxes.getBoxNames();
+      $scope.index = 0;
+      $scope.setupPdf();
+    }
+
+    // dev end
 
   }
 ]);

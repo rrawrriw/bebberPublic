@@ -1,9 +1,90 @@
 /*_*/
 
-body { padding-top: 70px; }
+body {
+  padding-top: 102px;
+}
+
+#main {
+  margin: 0;
+  padding: 0;
+}
+
+nav#box {
+  background-color: white;
+  position: fixed;
+  top: 51px;
+}
+
+#workspace {
+  padding-top: 0;
+  margin-top: 0;
+}
+
+h4#filename {
+  margin-top: 0;
+  text-align: center;
+  background-color: #B7CEDC;
+  padding: 8px;
+  color: white;
+  overflow: hidden;
+}
+
+#fileviewerspace {
+  padding-top: 10px;
+  border-left: 1px solid #e7e7e7; 
+}
 
 .tag-error-msg {
   position: relative;
   top: 1px;
   left: 1px;
+}
+
+.btn-lastfile:focus,
+.btn-nextfile:focus,
+.btn-lastfile,
+.btn-nextfile {
+  background-color: #B7CEDC;
+  border: none;
+  outline: 0;
+}
+
+.btn-lastfile {
+  float: left;
+}
+.btn-nextfile {
+  float: right;
+}
+
+
+#files {
+  padding-left: 0;
+  border-left: 1px solid #e7e7e7;
+  padding-right: 0;
+}
+
+table tr td {
+  background: #f8f8f8;
+}
+
+#boxes {
+
+}
+
+#boxes ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.navbar {
+  margin-bottom: 0;
+}
+
+span.tag {
+  margin-right: 5px;
+}
+
+.display-modal {
+  display: block;
 }

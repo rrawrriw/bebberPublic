@@ -1,0 +1,76 @@
+<nav id="box" class="navbar navbar-default navbar-fixed-top">
+  <div class="container-fluid">
+    <div class="col-md-2">
+      <div class="btn-group">
+        <button type="button" class="btn btn-default navbar-btn">
+          Ansichten
+        </button>
+        <button type="button" class="btn btn-default navbar-btn dropdown-toggle" data-toggle="dropdown">
+          <span class="caret"></span>
+          <span class="sr-only">dropdown-menu</span>
+        </button>
+        <ul class="dropdown-menu" role="menu">
+          <li ng-click="showListView()"><a>Listenansicht</a></li>
+          <li><a>Einzelansicht</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="col-md-2">
+      <button class="btn btn-default navbar-btn" ng-click="moveFile(boxName, 'archiv', file.Filename)">
+        <span class="glyphicon glyphicon-briefcase"></span>
+      </button>
+      <button class="btn btn-default navbar-btn" data-toggle="modal" data-target="#selectbox">
+        <span class="glyphicon glyphicon-transfer"></span>
+      </button>
+    </div>
+  </div>
+</nav>
+<div id="workspace" class="container-fluid" tabindex="0" ng-keypress="actionKeys($event)">
+  <div id="tagspace" class="col-md-4"> 
+    <h4 id="filename">
+      <button class="btn-lastfile" ng-click="loadPrevFile()"><span class="glyphicon glyphicon-chevron-left"></span></button>
+      {{file.Filename}}
+      <button class="btn-nextfile" ng-click="loadNextFile()"><span class="glyphicon glyphicon-chevron-right"></span></button>
+    </h4>
+    <div class="input-group">
+      <span class="input-group-addon" id="basic-addon1"><span class="glyphicon glyphicon-tags"></span></span>
+      <input id="newtags" type="text" class="form-control" ng-model="newTags" ng-keypress="sendTags($event, file.Filename, newTags)" ng-list>
+    </div>
+    <h4>Tags:</h4>
+    <ul>
+      <li ng-repeat="tag in file.CurrTags">
+        <span class="label label-primary">{{tag}}</span>
+      </li>
+    </ul>
+  </div>
+  <div id="fileviewerspace" class="col-md-8">
+    <div id="pdfctrl" class="btn-group">
+      <button class="btn btn-default" ng-click="prevPage()"><span class="glyphicon glyphicon-chevron-left"></span></button>
+      <button class="btn btn-default" ng-click="zoomIn()"><span class="glyphicon glyphicon-zoom-in"></span></button>
+      <button class="btn btn-default" ng-click="zoomOut()"><span class="glyphicon glyphicon-zoom-out"></span></button>
+      <button class="btn btn-default" ng-click="nextPage()"><span class="glyphicon glyphicon-chevron-right"></span></button>
+      <p id="pdfpages">{{currentPage}}/{{totalPages}}</p>
+    </div>
+    <pdf-viewer delegate-handle="pdfFile" url="pdfUrl" scale="1.4"></pdf-viewer> 
+    <!-- <canvas id="pdf-files"></canvas> -->
+  </div>
+</div>
+
+<!-- Select box -->
+<div class="modal fade" id="selectbox" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title" id="myModalLabel">Select Direcotry</h4>
+      </div>
+      <div class="modal-body">
+        <ul>
+          <li ng-repeat="name in boxNames" ng-click="moveFile(boxName, name, file.Filename)">
+            <a data-dismiss="modal" data-target="#selectbox">{{name}}</a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>

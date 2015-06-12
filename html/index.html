@@ -9,43 +9,26 @@
     <link href="public/css/my.css" rel="stylesheet" type="text/css">
     <script src="public/ext/jquery/dist/jquery.min.js"></script>
     <script src="public/ext/bootstrap/dist/js/bootstrap.min.js"></script>
+    <script src="public/ext/pdfjs/compatibility.js"></script>
+    <script src="public/ext/pdfjs/pdf.js"></script>
     <script src="public/ext/angular/angular.min.js"></script>
     <script src="public/ext/angular-route/angular-route.min.js"></script>
     <script src="public/ext/angular-resource/angular-resource.min.js"></script>
+    <script src="public/ext/angular-pdf-viewer/angular-pdf-viewer.min.js"></script>
     <script src="public/js/main.js"></script>
     <script src="public/js/controller.js"></script>
   </head>
  
   <body ng-controller="initCtrl">
-    <nav class="navbar navbar-default navbar-fixed-top">
-      <div class="navbar-header">
-        <a class="navbar-brand" href="#">Bebber</a>
-      </div>
-    </nav>
-
-    <div ng-view></div>
-
-
-  <!-- File load modal -->
-  <div class="modal fade" id="dirInput" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-      <div class="modal-content">
-        <div class="modal-header">
-          <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-          <h4 class="modal-title" id="myModalLabel">Select Direcotry</h4>
-        </div>
-        <div class="modal-body">
-          <input type="text" value="/home/t/Downloads" class="form-control" placeholder="/path/to/dir" aria-describedby="sizing-addon1" ng-model="dirInput">
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-          <button type="button" class="btn btn-primary" ng-click="loadDirectory(dirInput)">Load Directory</button>
+    <header id="top">
+      <div class="navbar navbar-default navbar-fixed-top">
+        <div class="navbar-header">
+          <a class="navbar-brand" href="#">Bebber</a>
         </div>
       </div>
-    </div>
-  </div>
+    </header>
 
-
+    <div id="main" ng-view></div>
 
   </body>
 
