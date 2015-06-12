@@ -11,38 +11,44 @@ bebberCtrl.controller('initCtrl', function($scope) {
 });
 
 
-bebberCtrl.controller('loginCtrl', ['$scope', '$http', '$location', 'User', 'Boxes',
-  function($scope, $http, $location, User, Boxes) {
+bebberCtrl.controller('loginCtrl', ['$scope', '$rootScope', '$http', '$location', '$log', 'User', 'Boxes',
+  function($scope, $rootScope, $http, $location, $log, User, Boxes) {
+    angular.element("#username").focus();
     $scope.login = function () {
       var user = {Username: $scope.username,
                   Password: $scope.password}
       $http.post('/Login', user)
         .success(function (data) {
           if (data.Status === 'fail') {
-            console.log(data.Msg);
+            $log.error(data.Msg);
           } else if (data.Status === 'success') {
             $scope.boxes = Boxes;
             $scope.user = User;
-            $scope.user.get({'name':'a'}, function(user) {
+            $scope.user.get({'name': user.Username}, function(user) {
               angular.forEach(user.Dirs, function(v, i) {
                 $scope.boxes.addBox(i, v);
               });
+              $rootScope.loggedInAs = user.Username;
             })
             $location.url('/box/inbox');
           }
         }).error(function (data) {
-          console.log(data);
+          $log.error(data);
         })
     }
 
   }
 ]);
 
-bebberCtrl.controller('boxCtrl', ['$scope', '$http', '$location', '$routeParams', '$timeout', 'pdfDelegate', 'User', 'Boxes', 
-  function($scope, $http, $location, $routeParams, $timeout, pdfDelegate, User, Boxes) {
+bebberCtrl.controller('boxCtrl', ['$scope', '$http', '$log', 
+                                  '$location', '$routeParams', 
+                                  '$timeout', 'pdfDelegate', 
+                                  'User', 'Boxes', 
+  function($scope, $http, $log, $location, $routeParams, $timeout, pdfDelegate, User, Boxes) {
     $scope.params = $routeParams;
     $scope.boxes = Boxes;
     $scope.boxName = $scope.params.name;
+    $scope.boxNames = [];
     $scope.selectedFiles = {};
 
     $scope.sendTags = function (keyEvent, filename, newTags) {
@@ -77,7 +83,7 @@ bebberCtrl.controller('boxCtrl', ['$scope', '$http', '$location', '$routeParams'
         } else {
           var err = $scope.boxes.loadBox(boxName, function (data, err) {
             if (err !== undefined) {
-              console.log("Error LoadBox: "+ err);
+              $log.error("Error LoadBox: "+ err);
             } else {
               $scope.box = data; 
             }
@@ -114,16 +120,16 @@ bebberCtrl.controller('boxCtrl', ['$scope', '$http', '$location', '$routeParams'
           if (data.Status === "success") {
             var err = $scope.boxes.moveFile(from, to, file);
             if (err !== undefined) {
-              console.log(err);
+              $log.error(err);
               return
             }
           } else {
-            console.log(data.Msg);
+            $log.error(data.Msg);
           }
 
         })
         .error(function (data, error) {
-          console.log(data);
+          $log.error(data);
         });
     }
 
@@ -163,6 +169,22 @@ bebberCtrl.controller('boxCtrl', ['$scope', '$http', '$location', '$routeParams'
       $location.url('/box/'+ boxName +'/singleview');
     }
 
+    // Run on start
+    if ($scope.boxes.isCashed($scope.boxName) === false) {
+      var err = $scope.boxes.loadBox($scope.boxName, function (data, err) {
+        if (err !== undefined) {
+          $log.error("Error LoadBox: "+ err);
+        } else {
+          $scope.box = data;
+          $scope.boxNames = $scope.boxes.getBoxNames();
+        }
+      });
+    } else {
+      $scope.box = $scope.boxes.getCashedBox($scope.boxName);
+      $scope.boxNames = $scope.boxes.getBoxNames();
+    }
+
+    /*
     // dev
     $scope.user = User;
     $scope.user.get({'name':'a'}, function(user) {
@@ -183,25 +205,27 @@ bebberCtrl.controller('boxCtrl', ['$scope', '$http', '$location', '$routeParams'
       }
     })
     // dev end
+    */
 
 
   }
 ]);
 
 
-bebberCtrl.controller('boxSingleViewCtrl', ['$scope', '$http', '$routeParams', '$location', '$timeout', '$document', 'pdfDelegate', 'Boxes', 'User',
-  function ($scope, $http, $routeParams, $location, $timeout, $document, pdfDelegate, Boxes, User) {
+bebberCtrl.controller('boxSingleViewCtrl', ['$scope', '$http', '$routeParams', '$log', 
+                                            '$location', '$timeout', '$document', 
+                                            'pdfDelegate', 'Boxes', 'User',
+  function ($scope, $http, $routeParams, $log, $location, $timeout, $document, pdfDelegate, Boxes, User) {
     $scope.params = $routeParams;
     $scope.boxName = $scope.params.name;
     $scope.boxes = Boxes;
+    $scope.boxNames = $scope.boxes.getBoxNames();
     $scope.index = 0;
     $scope.currentPage = 1;
     $scope.totalPages = '?';
     $scope.file = '';
 
     $document.keydown(function (keyEvent) {
-      console.log("actionkey");
-      console.log(keyEvent);
       if (keyEvent.which === 37) {
         $scope.loadPrevFile();
 
@@ -209,7 +233,6 @@ bebberCtrl.controller('boxSingleViewCtrl', ['$scope', '$http', '$routeParams', '
         $scope.loadNextFile();
 
       } else if (keyEvent.which === 65) {
-        console.log("archiv");
         $scope.moveFile($scope.boxName, 'archiv', $scope.file);
       } else {
         angular.element('#newtags').focus();
@@ -318,8 +341,8 @@ bebberCtrl.controller('boxSingleViewCtrl', ['$scope', '$http', '$routeParams', '
         $http.post('/AddTags/', JSON.stringify(jsonReq))
           .success(function (data) {
             if (data.Status == 'fail') {
-              console.log(data);
               that.tagErrorMsg = data.Msg;
+              $log.error(data.Msg);
             } else {
               that.newTags = "";
               angular.forEach(newTags, function (value, key) {
@@ -340,7 +363,7 @@ bebberCtrl.controller('boxSingleViewCtrl', ['$scope', '$http', '$routeParams', '
           if (data.Status === "success") {
             var err = $scope.boxes.moveFile(from, to, file);
             if (err !== undefined) {
-              console.log(err);
+              $log.error(err);
               return
             }
             $scope.loadNextFile();
@@ -354,10 +377,30 @@ bebberCtrl.controller('boxSingleViewCtrl', ['$scope', '$http', '$routeParams', '
         });
     }
 
+    // Run on start
+    if ($scope.boxes.isCashed($scope.boxName) === false) {
+      var err = $scope.boxes.loadBox($scope.boxName, function (data, err) {
+        if (err !== undefined) {
+          $log.error("Error LoadBox: "+ err);
+        } else {
+          $scope.box = data;
+          $scope.boxNames = $scope.boxes.getBoxNames();
+          $scope.setupPdf();
+          $scope.index = 0;
+        }
+      });
+    } else {
+      $scope.box = $scope.boxes.getCashedBox($scope.boxName);
+      $scope.boxNames = $scope.boxes.getBoxNames();
+      $scope.setupPdf();
+      $scope.index = 0;
+    }
+
+    /*
     // dev
     $scope.user = User;
     if ($scope.boxes.isCashed($scope.boxName) === false) {
-      $scope.user.get({'name':'a'}, function(user) {
+      $scope.user.get({'name': 'a'}, function(user) {
         angular.forEach(user.Dirs, function(v, i) {
           $scope.boxes.addBox(i, v);
         });
@@ -384,6 +427,7 @@ bebberCtrl.controller('boxSingleViewCtrl', ['$scope', '$http', '$routeParams', '
     }
 
     // dev end
+    */
 
   }
 ]);

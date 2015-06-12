@@ -4,6 +4,10 @@ body {
   padding-top: 102px;
 }
 
+#userdata {
+  margin-right: 45px;
+}
+
 #main {
   margin: 0;
   padding: 0;

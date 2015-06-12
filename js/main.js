@@ -105,7 +105,6 @@ bebberApp.factory('Boxes', ['$http',
       },
       loadBox: function (box, afterFunc) {
         var that = this;
-        console.log('LoadBox: '+ box);
         if (this.existsBox(box) === false) {
           return box + ' doesn\'t exists';
         }
