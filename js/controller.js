@@ -233,7 +233,7 @@ bebberCtrl.controller('boxSingleViewCtrl', ['$scope', '$http', '$routeParams', '
         $scope.loadNextFile();
 
       } else if (keyEvent.which === 65) {
-        $scope.moveFile($scope.boxName, 'archiv', $scope.file);
+        $scope.moveFile($scope.boxName, 'archiv', $scope.file.Filename);
       } else {
         angular.element('#newtags').focus();
       }
@@ -368,12 +368,12 @@ bebberCtrl.controller('boxSingleViewCtrl', ['$scope', '$http', '$routeParams', '
             }
             $scope.loadNextFile();
           } else {
-            conosle.log(data.Msg);
+            $log.error(data.Msg);
           }
 
         })
         .error(function (data, error) {
-          conosle.log(data);
+          $log.error(data);
         });
     }
 
