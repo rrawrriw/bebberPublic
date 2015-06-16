@@ -1,27 +1,8 @@
 <nav id="box" class="navbar navbar-default navbar-fixed-top">
   <div class="container-fluid">
     <div class="col-md-2">
-      <div class="btn-group">
-        <button type="button" class="btn btn-default navbar-btn">
-          Ansichten
-        </button>
-        <button type="button" class="btn btn-default navbar-btn dropdown-toggle" data-toggle="dropdown">
-          <span class="caret"></span>
-          <span class="sr-only">dropdown-menu</span>
-        </button>
-        <ul class="dropdown-menu" role="menu">
-          <li ng-click="showListView()"><a>Listenansicht</a></li>
-          <li><a>Einzelansicht</a></li>
-        </ul>
-      </div>
     </div>
     <div class="col-md-2">
-      <button class="btn btn-default navbar-btn" ng-click="moveFile(boxName, 'archiv', file.Filename)">
-        <span class="glyphicon glyphicon-briefcase"></span>
-      </button>
-      <button class="btn btn-default navbar-btn" data-toggle="modal" data-target="#selectbox">
-        <span class="glyphicon glyphicon-transfer"></span>
-      </button>
     </div>
   </div>
 </nav>
@@ -51,8 +32,28 @@
       <button class="btn btn-default" ng-click="nextPage()"><span class="glyphicon glyphicon-chevron-right"></span></button>
       <p id="pdfpages">{{currentPage}}/{{totalPages}}</p>
     </div>
-    <pdf-viewer delegate-handle="pdfFile" url="pdfUrl" scale="1.4"></pdf-viewer> 
+    <!-- <pdf-viewer delegate-handle="pdfFile" url="pdfUrl" scale="1.4"></pdf-viewer> -->
     <!-- <canvas id="pdf-files"></canvas> -->
+  </div>
+</div>
+
+<!-- Default Modal to input value ValueTag -->
+<div class="modal fade" id="valuetag-modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title" id="myModalLabel">Wert eingeben</h4>
+      </div>
+      <div class="modal-body">
+        <div class="input-group">
+          <input type="text" class="valuetag-start form-control" ng-model="valueTagInput" ng-keypress="valueTagKeyEvents($event)">
+          <span class="input-group-btn">
+            <button class="btn btn-default" type="button" ng-click="searchStrAppend()">OK!</button>
+          </span>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 

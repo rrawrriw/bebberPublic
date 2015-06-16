@@ -25,6 +25,12 @@
         <div class="navbar-header">
           <a class="navbar-brand" href="#">Bebber</a>
         </div>
+        <form class="navbar-form navbar-left">
+          <div class="form-group">
+            <input type="text" class="form-control" placeholder="Search for..." ng-model="searchInput" ng-keypress="searchKeyEvents($event)">
+            <button class="btn btn-default" type="button">Go!</button>
+          </div>
+        </form>
         <div id="userdata" class="navbar-right">
           <button class="btn btn-default navbar-btn">
             <span class="glyphicon glyphicon-user"></span>&nbsp;{{loggedInAs}}
