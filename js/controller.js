@@ -1,15 +1,15 @@
 'use strict'
 
-var bebberCtrl = angular.module('bebberCtrl', ['ngRoute', 'ngResource']);
+var appCtrl = angular.module('appCtrl', ['appServices']);
 
 var buildJsonTagsStr = function (tags) {
   return "" 
 }
 
-bebberCtrl.controller('initCtrl', function($scope) {});
+appCtrl.controller('initCtrl', function($scope) {});
 
 
-bebberCtrl.controller('loginCtrl', ['$scope', '$rootScope', '$http', '$location', '$log', 'User', 
+appCtrl.controller('loginCtrl', ['$scope', '$rootScope', '$http', '$location', '$log', 'User', 
   function($scope, $rootScope, $http, $location, $log, User) {
     angular.element("#username").focus();
     $scope.login = function () {
@@ -21,7 +21,7 @@ bebberCtrl.controller('loginCtrl', ['$scope', '$rootScope', '$http', '$location'
             $log.error(data.Msg);
           } else if (data.Status === 'success') {
             $rootScope.loggedInAs = user.Username;
-            $location.url('/files');
+            $location.url('/docs');
           }
         })
         .error(function (data) {
@@ -32,81 +32,102 @@ bebberCtrl.controller('loginCtrl', ['$scope', '$rootScope', '$http', '$location'
   }
 ]);
 
-bebberCtrl.controller('singleViewCtrl', ['$scope', '$rootScope', '$http', '$log', 
+appCtrl.controller('singleViewCtrl', ['$scope', '$rootScope', '$http', '$log', 
                                             '$location', '$timeout', '$document', 
-                                            'pdfDelegate', 'User',
-  function ($scope, $rootScope, $http, $log, $location, $timeout, $document, pdfDelegate, User) {
-    $scope.fileIndex = 0;
+                                            'pdfDelegate', 'User', 'SearchStr', 'Docs',
+  function ($scope, $rootScope, $http, $log, $location, $timeout, $document, pdfDelegate, User, SearchStr, Docs) {
+    $scope.docIndex = 0;
     $scope.currPdfPage = 1;
     $scope.totalPages = '?';
+    $scope.searchStr = SearchStr;
+    $rootScope.searchStrDraftAmount = 0;
+    $scope.docs = Docs;
 
-    var tagFormRef = {
-      'Buchhaltungsdaten': function () {
-        var modal = angular.element('#Buchhaltungsdaten-modal')
-        modal.on('shown.bs.modal', function (e) {
-          console.log('ahhh');
-          angular.element('.Buchhaltungsdaten-start').focus();
-        }).modal('show');
-      },
-      'Notiz': function () {
-        var modal = angular.element('#Notiz-modal')
-        modal.on('shown.bs.modal', function (e) {
-          console.log('ahhh');
-          angular.element('.Notiz-start').focus();
-        }).modal('show');
-      },
-
+    var openModal = function (tagName) {
+      var modal = angular.element('#'+tagName+'-modal')
+      modal.on('shown.bs.modal', function (e) {
+        angular.element('.'+tagName+'-start').focus();
+      }).modal('show');
     }
 
-    var tagForm = TagForm(tagFormRef);
+    var backToSearchInput = function () {
+      $rootScope.searchStrDraftAmount = $scope.searchStr.amountDraft();
+      $rootScope.searchStrDrafts = $scope.searchStr.readDraft();
+
+      angular.element('#search-input').val('');
+      angular.element('#search-input').focus();
+      console.log($scope.searchStr.readDraft());
+    }
+
+
+    var readSearchInput = function () {
+      return $scope.searchInput;
+    }
+
+    var readPdfHandler = function () {
+      return pdfDelegate.$getByHandle('pdfFile')
+    }
+
+    var cleanLabelInput = function () {
+      angular.element('#label-input').val('');
+    }
 
     $rootScope.searchKeyEvents = function (keyEvent) {
       if (keyEvent.which === 13) {
-        var input = $scope.searchInput
-        if (tagForm.contains(input)) {
-          var form = tagForm.getForm(input)
-          form();
+        var input = $scope.searchInput;
+        if (tagCtrls.contains(input)) {
+          var tagCtrl = tagCtrls.getCtrl(input);
+          tagCtrl.openModal();
         } else if (input.indexOf(":")+1 === input.length) {
-          var modal = angular.element('#valuetag-modal')
-          modal.on('shown.bs.modal', function (e) {
-            angular.element('.valuetag-start').focus();
-          }).modal('show');
-          $scope.valueTagname = input;
+          var tagCtrl = tagCtrls.getCtrl('ValueTag');
+          tagCtrl.openModal();
         } else {
-          console.log("simpletag"); 
+          $scope.searchStr.append(readSearchInput(), {});
+          backToSearchInput();
         }
       }
     };
 
+    $rootScope.removeDraftStr = function (tagName) {
+      $scope.searchStr.removeDraft(tagName);
+      backToSearchInput();
+    }
 
-    $scope.valueTagKeyEvents = function (keyEvent) {
+    $rootScope.openSearchStrDraft = function () {
+      angular.element('#searchstr-draft').show();
+    }
 
+    $rootScope.closeSearchStrDraft = function () {
+      angular.element('#searchstr-draft').hide();
+    }
+
+    $rootScope.findFiles = function () {
+      console.log($scope.searchStr.make());
+    }
+
+    $rootScope.clearSearchStrDraft = function () {
+      $scope.searchStr.clearDraft();
+      $rootScope.searchStrDraftAmount = $scope.searchStr.amountDraft();
+    }
+
+    $scope.modalKeyEvents = function (keyEvent, tagType) {
+      if (keyEvent.which === 13) {
+        if (tagCtrls.contains(tagType)) {
+          var tagCtrl = tagCtrls.getCtrl(tagType);
+          var obj = tagCtrl.readModal();
+          $scope.searchStr.append(obj.tagName, obj.data);
+          angular.element('#'+tagType+'-modal').modal('hide');
+          backToSearchInput()
+        }
+      }
     };
     
     $scope.searchStrAppend = function () {
 
     }
 
-    /*
-    $document.keydown(function (keyEvent) {
-      if (keyEvent.which === 37) {
-        $scope.loadPrevFile();
-
-      } else if (keyEvent.which === 39) {
-        $scope.loadNextFile();
-
-      } else if (keyEvent.which === 65) {
-        $scope.moveFile($scope.boxName, 'archiv', $scope.file.Filename);
-      } else {
-        angular.element('#newtags').focus();
-      }
-    });
-    */
-
-
     $scope.setupPdf = function () {
-      $scope.file = $scope.box[$scope.index];
-      $scope.pdfUrl = '/LoadFile/'+ $scope.boxName +'/'+ $scope.file.Filename;
+      $scope.pdfUrl = '/ReadDocFile/'+ $scope.doc.name;
       $timeout(function() {
         pdfDelegate.$getByHandle('pdfFile').load($scope.pdfUrl);
         $timeout(function() { 
@@ -147,92 +168,72 @@ bebberCtrl.controller('singleViewCtrl', ['$scope', '$rootScope', '$http', '$log'
     }
 
     $scope.nextPage = function() {
-      var pdfDoc = pdfDelegate.$getByHandle('pdfFile')
+      var pdfDoc = readPdfHandler()
       pdfDoc.next();
       $scope.currentPage = pdfDoc.getCurrentPage();
       $scope.totalPages = pdfDoc.getPageCount();
     }
 
     $scope.prevPage = function() {
-      var pdfDoc = pdfDelegate.$getByHandle('pdfFile')
+      var pdfDoc = readPdfHandler()
       pdfDoc.prev();
       $scope.currentPage = pdfDoc.getCurrentPage();
       $scope.totalPages = pdfDoc.getPageCount();
     }
 
     $scope.zoomIn = function() {
-      pdfDelegate.$getByHandle('pdfFile').zoomIn();
+      readPdfHandler().zoomIn();
     }
 
     $scope.zoomOut = function() {
-      pdfDelegate.$getByHandle('pdfFile').zoomOut();
+      readPdfHandler.zoomOut();
     }
 
-    $scope.loadNextFile = function () {
-      if ($scope.box.length === $scope.index+1) {
-        $scope.index = 0;
+    $scope.nextDoc = function () {
+      if ($scope.docs.length === $scope.index+1) {
+        $scope.docIndex = 0;
       } else {
-        $scope.index += 1;
+        $scope.docIndex += 1;
       }
+      $scope.doc = $scope.docs.readCurrDocs()[$scope.docIndex];
       $scope.setupPdf();
       $scope.currentPage = 1;
       $scope.totalPages = '?';
     }
 
-    $scope.loadPrevFile = function () {
-      if ($scope.index-1 < 0) {
-        $scope.index = $scope.box.length-1;
+    $scope.prevDoc = function () {
+      if ($scope.docIndex-1 < 0) {
+        $scope.docIndex = $scope.docs.length-1;
       } else {
-        $scope.index -= 1;
+        $scope.docIndex -= 1;
       }
+      $scope.doc = $scope.docs.readCurrDocs()[$scope.docIndex];
       $scope.setupPdf();
       $scope.currentPage = 1;
       $scope.totalPages = '?';
     }
 
-    $scope.sendTags = function (keyEvent, filename, newTags) {
+    $scope.labelInputKeyEvents = function (keyEvent, name, newLabels) {
       if (keyEvent.which === 13) {
         var that = this;
         that.tagErrorMsg = false;
-
-        var jsonReq = {Filename: filename, Tags: newTags}
-        $http.post('/AddTags/', JSON.stringify(jsonReq))
-          .success(function (data) {
-            if (data.Status == 'fail') {
-              that.tagErrorMsg = data.Msg;
-              $log.error(data.Msg);
-            } else {
-              that.newTags = "";
-              angular.forEach(newTags, function (value, key) {
-                that.file.CurrTags.push(value);
-              });
-            }
-          })
-          .error(function (data, status) {
-            that.tagErrorMsg = data;
+        $scope.docs.appendLabels(name, newLabels)
+          .then(function (labels, response) {
+            cleanLabelInput();
           });
-         
       }
     }
 
-    $scope.moveFile = function(from, to, file) {
-      $http.post("/MoveFile", {FromBox: from, ToBox: to, File: file})
-        .success(function (data) {
-          if (data.Status === "success") {
-            var err = $scope.boxes.moveFile(from, to, file);
-            if (err !== undefined) {
-              $log.error(err);
-              return
-            }
-            $scope.loadNextFile();
-          } else {
-            $log.error(data.Msg);
-          }
-
-        })
-        .error(function (data, error) {
-          $log.error(data);
+    $scope.removeDocLabel = function (name, label) {
+      $scope.docs.removeLabel(name, label)
+        .then(function (label, response) {
+          cleanLabelInput();
         });
+    }
+
+    $scope.saveNote = function (name, note) {
+      $scope.docs.saveNote(name, note).catch(function (response) {
+      });
     }
 
     // Run on start
@@ -240,6 +241,17 @@ bebberCtrl.controller('singleViewCtrl', ['$scope', '$rootScope', '$http', '$log'
     $scope.user.get({'name':'a'}, function(user) {
       $log.debug('User: ', user); 
     });
+
+    $scope.docs.find('{"Labels": "$in": ["Neu"]}')
+      .then(function (draft) {
+        return draft;
+      }).then(function (result) {
+        $scope.doc = result[$scope.docIndex];
+        $scope.docNote = $scope.doc.note;
+        $scope.pdfUrl = "/ReadDocFile/"+ $scope.doc.name;
+        $scope.setupPdf();
+      });
+    
 
   }
 ]);

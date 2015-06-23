@@ -71,16 +71,6 @@ table tr td {
   background: #f8f8f8;
 }
 
-#boxes {
-
-}
-
-#boxes ul {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
 .navbar {
   margin-bottom: 0;
 }
@@ -89,6 +79,44 @@ span.tag {
   margin-right: 5px;
 }
 
-.display-modal {
-  display: block;
+#searchstr-draft {
+  z-index: 200;
+  min-width: 400px;
+  min-height: 200px;
+  padding: 10px;
+}
+
+#file-navbar {
+  z-index: 100;
+}
+
+.remove-draft {
+  position: relative;
+  left: 340px;
+  display: flex;
+  z-index: 200;
+}
+
+.remove-label {
+  float: right; 
+}
+
+.note {
+  border: 1px solid #f8f8f8; 
+  outline: none;
+  width: 100%;
+  height: 100px;
+}
+
+.section-head {
+  background-color: #f8f8f8;
+  border-top-left-radius: 10px 5px;
+  border-top-right-radius: 10px 5px;
+  min-height: 20px;
+  padding: 10px;
+  font-weight: bold;
+}
+
+.save-note {
+  float: right;
 }

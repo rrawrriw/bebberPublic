@@ -16,25 +16,59 @@
     <script src="public/ext/angular-resource/angular-resource.min.js"></script>
     <script src="public/ext/angular-pdf-viewer/angular-pdf-viewer.min.js"></script>
     <script src="public/js/main.js"></script>
+    <script src="public/js/services.js"></script>
     <script src="public/js/controller.js"></script>
   </head>
  
   <body ng-controller="initCtrl">
     <header id="top">
       <div class="navbar navbar-default navbar-fixed-top">
-        <div class="navbar-header">
-          <a class="navbar-brand" href="#">Bebber</a>
-        </div>
-        <form class="navbar-form navbar-left">
-          <div class="form-group">
-            <input type="text" class="form-control" placeholder="Search for..." ng-model="searchInput" ng-keypress="searchKeyEvents($event)">
-            <button class="btn btn-default" type="button">Go!</button>
+        <div class="container-fluid">
+          <div class="col-md-4">
+            <div class="navbar-header">
+              <a class="navbar-brand" href="#">Bebber</a>
+            </div>
           </div>
-        </form>
-        <div id="userdata" class="navbar-right">
-          <button class="btn btn-default navbar-btn">
-            <span class="glyphicon glyphicon-user"></span>&nbsp;{{loggedInAs}}
-          </button>
+          <div class="col-md-4">
+            <form class="navbar-form navbar-left">
+              <div class="form-group">
+                <div class="dropdown">
+                  <input id="search-input" type="text" class="form-control" placeholder="Add Search Param..."
+                         ng-model="searchInput" ng-keypress="searchKeyEvents($event)"
+                         ng-focus="openSearchStrDraft()">
+                  <button class="btn btn-default" type="button" ng-click="openSearchStrDraft()">
+                    <span class="glyphicon glyphicon-list-alt"></span>
+                    <span class="badge">{{searchStrDraftAmount}}</span>
+                  </button>
+                  <button class="btn btn-default" type="button" ng-click="findFiles()">Go!</button>
+                  <div id="searchstr-draft" class="dropdown-menu">
+                    <ul id="searchstr-draft" class="list-group">
+                      <li class="list-group-item" ng-repeat="(tagName,obj) in searchStrDrafts">
+                        <div class="input-group">
+                          <span class="input-group-addon" id="sizing-addon1">{{tagName}}</span>
+                          <input type="text" class="form-control" placeholder="Username" aria-describedby="sizing-addon1" value="{{obj}}">
+                        </div>
+                        <span class="remove-draft glyphicon glyphicon-remove-circle" 
+                              ng-click="removeDraftStr(tagName)"></span>
+                      </li>
+                    </ul>
+                    <div class="btn-group">
+                      <button class="btn btn-default" type="button" ng-click="findFiles()">Go!</button>
+                      <button class="btn btn-default" type="button" ng-click="closeSearchStrDraft()">Close</button>
+                      <button class="btn btn-default" type="button" ng-click="clearSearchStrDraft()">Clear</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </form>
+          </div>
+          <div class="col-md-4">
+            <div id="userdata" class="navbar-right">
+              <button class="btn btn-default navbar-btn">
+                <span class="glyphicon glyphicon-user"></span>&nbsp;{{loggedInAs}}
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </header>

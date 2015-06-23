@@ -1,4 +1,4 @@
-<nav id="box" class="navbar navbar-default navbar-fixed-top">
+<nav id="file-navbar" class="navbar navbar-default navbar-fixed-top">
   <div class="container-fluid">
     <div class="col-md-2">
     </div>
@@ -7,22 +7,62 @@
   </div>
 </nav>
 <div id="workspace" class="container-fluid" tabindex="0" ng-keypress="actionKeys($event)">
-  <div id="tagspace" class="col-md-4"> 
+  <div id="docspace" class="col-md-4"> 
     <h4 id="filename">
-      <button class="btn-lastfile" ng-click="loadPrevFile()"><span class="glyphicon glyphicon-chevron-left"></span></button>
-      {{file.Filename}}
-      <button class="btn-nextfile" ng-click="loadNextFile()"><span class="glyphicon glyphicon-chevron-right"></span></button>
+      <button class="btn-lastfile" ng-click="prevDoc()"><span class="glyphicon glyphicon-chevron-left"></span></button>
+      {{doc.name}}
+      <button class="btn-nextfile" ng-click="nextDoc()"><span class="glyphicon glyphicon-chevron-right"></span></button>
     </h4>
-    <div class="input-group">
-      <span class="input-group-addon" id="basic-addon1"><span class="glyphicon glyphicon-tags"></span></span>
-      <input id="newtags" type="text" class="form-control" ng-model="newTags" ng-keypress="sendTags($event, file.Filename, newTags)" ng-list>
+    <div id="docInfos">
+      <header class="section-head">Infos:</header>
+      <table class="table">
+        <tbody>
+          <tr>
+            <td>Eingangsdatum</td><td>{{doc.infos.dateofreceipt}}</td>
+          </tr>
+          <tr>
+            <td>Scandatum</td><td>{{doc.infos.dateofscan}}</td>
+          </tr>
+        </tbody>
+      </table>
     </div>
-    <h4>Tags:</h4>
-    <ul>
-      <li ng-repeat="tag in file.CurrTags">
-        <span class="label label-primary">{{tag}}</span>
+    <div id="account-data">
+      <header class="section-head">Buchhaltungsinfos:</header>
+      <div class="input-group">
+        <span class="input-group-addon" id="docnumber">Belegnummer</span>
+        <input type="text" class="form-control" placeholder="Belegnummer" aria-describedby="docnumber" ng-model="docNumber">
+      </div>
+      <div class="input-group">
+        <span class="input-group-addon" id="accnumber">Kontonummer</span>
+        <input type="text" class="form-control" placeholder="Kontonummer" aria-describedby="accnumber" ng-model="accNumber">
+      </div>
+      <h4>Belegzeitraum</h4>
+      <div class="input-group">
+        <span class="input-group-addon" id="docperiodfrom">Von</span>
+        <input type="text" class="form-control" placeholder="Kontonummer" aria-describedby="docperiodfrom" ng-model="accNumber">
+      </div>
+      <div class="input-group">
+        <span class="input-group-addon" id="docperiodto">Bis</span>
+        <input type="text" class="form-control" placeholder="Kontonummer" aria-describedby="docperiodto" ng-model="accNumber">
+      </div>
+    </div>
+    <header class="section-head">Labels:</header>
+    <ul class="list-group">
+      <li class="list-group-item" ng-repeat="label in doc.labels">
+        {{label}}<span class="glyphicon glyphicon-remove-circle remove-label" ng-click="removeDocLabel(doc.name, label)"></span>
+      </li>
+      <li class="list-group-item">
+        <div class="input-group">
+          <span class="input-group-addon" id="basic-addon1"><span class="glyphicon glyphicon-tags"></span></span>
+          <input id="label-input" type="text" class="form-control" 
+                 ng-model="newLabel" ng-keypress="labelInputKeyEvents($event, doc.name, newLabel)" ng-list>
+        </div>
       </li>
     </ul>
+    <div id="note">
+      <header class="section-head">Notiz: <span class="save-note glyphicon glyphicon-floppy-disk" ng-click="saveNote(doc.name, docNote)"></span></header>
+      <textarea class="note" cols=10 ng-model="docNote">{{doc.note}}</textarea>
+    </div>
   </div>
   <div id="fileviewerspace" class="col-md-8">
     <div id="pdfctrl" class="btn-group">
@@ -32,13 +72,13 @@
       <button class="btn btn-default" ng-click="nextPage()"><span class="glyphicon glyphicon-chevron-right"></span></button>
       <p id="pdfpages">{{currentPage}}/{{totalPages}}</p>
     </div>
-    <!-- <pdf-viewer delegate-handle="pdfFile" url="pdfUrl" scale="1.4"></pdf-viewer> -->
+    <pdf-viewer delegate-handle="pdfFile" url="pdfUrl" scale="1.4"></pdf-viewer> 
     <!-- <canvas id="pdf-files"></canvas> -->
   </div>
 </div>
 
 <!-- Default Modal to input value ValueTag -->
-<div class="modal fade" id="valuetag-modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+<div class="modal fade" id="ValueTag-modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
   <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header">
@@ -47,7 +87,7 @@
       </div>
       <div class="modal-body">
         <div class="input-group">
-          <input type="text" class="valuetag-start form-control" ng-model="valueTagInput" ng-keypress="valueTagKeyEvents($event)">
+          <input type="text" class="ValueTag-start form-control" ng-model="valueTagInput" ng-keypress="modalKeyEvents($event, 'ValueTag')">
           <span class="input-group-btn">
             <button class="btn btn-default" type="button" ng-click="searchStrAppend()">OK!</button>
           </span>
@@ -57,20 +97,73 @@
   </div>
 </div>
 
-<!-- Select box -->
-<div class="modal fade" id="selectbox" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+<!-- Notiz Modal -->
+<div class="modal fade" id="Notiz-modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
   <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-        <h4 class="modal-title" id="myModalLabel">Select Direcotry</h4>
+        <h4 class="modal-title" id="myModalLabel">Notiz eingeben</h4>
       </div>
       <div class="modal-body">
-        <ul>
-          <li ng-repeat="name in boxNames" ng-click="moveFile(boxName, name, file.Filename)">
-            <a data-dismiss="modal" data-target="#selectbox">{{name}}</a>
-          </li>
-        </ul>
+        <div class="input-group">
+          <textarea type="text" class="Notiz-start form-control" ng-model="NotizInput" ng-keypress="modalKeyEvents($event, 'Notiz')"></textarea>
+        </div>
+        <button class="btn btn-default" type="button" ng-click="searchStrAppend()">OK!</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Buchungszeitraum Modal -->
+<div class="modal fade" id="Buchungszeitraum-modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title" id="myModalLabel">Buchungszeitraum eingeben</h4>
+      </div>
+      <div class="modal-body">
+        <div class="input-group">
+          <span class="input-group-addon" id="von-addon">Von</span>
+          <input type="text" class="Buchungszeitraum-start form-control" placeholder="Von" 
+                 aria-describedby="von-addon" 
+                 ng-model="BuchungszeitraumInputVon" ng-keypress="modalKeyEvents($event, 'Buchungszeitraum')">
+        </div>
+        <div class="input-group">
+          <span class="input-group-addon" id="bis-addon">Bis</span>
+          <input type="text" class="form-control" placeholder="Bis"
+                 aria-describedby="bis-addon" 
+                 ng-model="BuchungszeitraumInputBis" ng-keypress="modalKeyEvents($event, 'Buchungszeitraum')">
+        </div>
+        <span class="input-group-btn">
+          <button class="btn btn-default" type="button" ng-click="searchStrAppend()">OK!</button>
+        </span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Status Modal -->
+<div class="modal fade" id="Status-modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title" id="myModalLabel">Status angeben</h4>
+      </div>
+      <div class="modal-body">
+        <div class="input-group">
+          <label for="states">Wähle Status</label>
+          <select id="states" class="Status-start form-control"
+                 ng-model="StatusInput" ng-keypress="modalKeyEvents($event, 'Status')">
+            <option>new</option>
+            <option>verified</option>
+            <option>inbox</option>
+            <option>inbox_martin</option>
+          </select>
+          <button class="btn btn-default" type="button" ng-click="searchStrAppend()">OK!</button>
+        </div>
       </div>
     </div>
   </div>
