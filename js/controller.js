@@ -48,11 +48,11 @@ appCtrl.controller('newDocsCtrl', ['$scope', '$location', 'Docs', 'Globals',
 ]);
 
 appCtrl.controller('singleViewCtrl', [
-  '$scope', '$rootScope', '$http', '$log', '$routeParams', '$location',
+  '$scope', '$rootScope', '$http', '$log', '$routeParams', '$location', '$q',
   '$timeout', '$document', 'pdfDelegate', 'User', 'SearchStr', 'Docs',
   'Globals',
   function ($scope, $rootScope, $http, $log, $routeParams, 
-    $location, $timeout, $document, pdfDelegate, User, SearchStr, Docs, Globals) {
+    $location, $q, $timeout, $document, pdfDelegate, User, SearchStr, Docs, Globals) {
 
     var setupCtrl = function () {
       $rootScope.searchStrDraftAmount = 0;
@@ -68,19 +68,101 @@ appCtrl.controller('singleViewCtrl', [
       $scope.docs = Docs;
       $scope.doc = $scope.docs.readDoc($scope.docName);
 
+      $scope.modals = {
+        changeDocName: {
+          id: "change-docname",
+          input: "",
+          save: function () {
+            $log.debug('save '+ this.input);
+            this.input = undefined;
+          },
+          keyEvent: function (keyEvent) {
+            $log.debug(keyEvent);
+          },
+          open: function () {
+            var that = this;
+            $log.debug('open modal '+ this.id);
+            openModal(this.id).then(function (modal) {
+              $log.debug($scope.doc.name);
+              $log.debug(modal);
+              angular.element('.'+ that.id +'-start').val($scope.doc.name);
+            });
+          },
+        },
+
+      };
+
+      $scope.labels = {
+        input: [],
+        save: function () {
+          var docName = $scope.doc.name;
+          var that = this;
+          $scope.docs.appendLabels(docName, this.input)
+            .then(function (response) {
+              if (response.Status === "success") {
+                $log.debug(response);
+                that.input = [];
+              } else if (response.Status === "fail") {
+                $log.error(response);
+              }
+            });
+        },
+        keyEvent: function (keyEvent) {
+          if (keyEvent.which === 13) {
+            this.save()
+          }
+        },
+      };
+
+      $scope.docnumbers = {
+        input: [],
+        save: function () {
+          var docName = $scope.doc.name;
+          var that = this;
+          $scope.docs.appendDocNumbers(docName, this.input)
+            .then(function (response) {
+              if (response.Status === "success") {
+                $log.debug(response);
+                that.input = [];
+              } else if (response.Status === "fail") {
+                $log.error(response);
+              }
+            });
+        },
+        keyEvent: function (keyEvent) {
+          if (keyEvent.which === 13) {
+            this.save()
+          }
+        },
+        remove: function (number) {
+          $scope.docs.removeDocNumber($scope.doc.name, number);
+        }
+      };
+
+
       // Dev
       $scope.user = User;
       $scope.user.get({'name':'a'}, function(user) {
         $log.debug('User: ', user); 
       });
+      $scope.docs.find('{"labels": {"$in": ["Neu"]}}')
+        .then(function(docs) {
+          docs.saveDocs(docs.searchResult);
+          $scope.docName = $routeParams.docName;
+          $scope.doc = $scope.docs.readDoc($scope.docName);
+          setupPDF()
+        });
       // End Dev
       
-      setupPDF()
+      //setupPDF()
       
     }
 
     var setupPDF = function () {
       $scope.pdfUrl = '/ReadDocFile/'+ $scope.doc.name;
+      PDFJS.disableWorker = true;
+      pdfDelegate.$getByHandle('pdfFile').load($scope.pdfUrl);
+      /*
       $timeout(function() {
         pdfDelegate.$getByHandle('pdfFile').load($scope.pdfUrl);
         $timeout(function() { 
@@ -120,14 +202,17 @@ appCtrl.controller('singleViewCtrl', [
         */
     }
 
-    /*
-    var openModal = function (tagName) {
-      var modal = angular.element('#'+tagName+'-modal')
+    var openModal = function (id) {
+      var deferred = $q.defer();
+
+      var modal = angular.element('#'+id+'-modal')
       modal.on('shown.bs.modal', function (e) {
-        angular.element('.'+tagName+'-start').focus();
+        angular.element('.'+id+'-start').focus();
+        deferred.resolve(modal);
       }).modal('show');
+
+      return deferred.promise;
     }
-    */
 
     var backToSearchInput = function () {
       $rootScope.searchStrDraftAmount = $scope.searchStr.amountDraft();
@@ -147,10 +232,7 @@ appCtrl.controller('singleViewCtrl', [
       return pdfDelegate.$getByHandle('pdfFile')
     }
 
-    var cleanLabelInput = function () {
-      angular.element('#label-input').val('');
-    }
-
+    /*
     $rootScope.searchKeyEvents = function (keyEvent) {
       if (keyEvent.which === 13) {
         var input = $scope.searchInput;
@@ -189,22 +271,8 @@ appCtrl.controller('singleViewCtrl', [
       $rootScope.searchStrDraftAmount = $scope.searchStr.amountDraft();
     }
 
-    $scope.modalKeyEvents = function (keyEvent, tagType) {
-      if (keyEvent.which === 13) {
-        if (tagCtrls.contains(tagType)) {
-          var tagCtrl = tagCtrls.getCtrl(tagType);
-          var obj = tagCtrl.readModal();
-          $scope.searchStr.append(obj.tagName, obj.data);
-          angular.element('#'+tagType+'-modal').modal('hide');
-          backToSearchInput()
-        }
-      }
-    };
+    */
     
-    $scope.searchStrAppend = function () {
-
-    }
-
 
     $scope.nextPage = function() {
       var pdfDoc = readPdfHandler()
@@ -238,31 +306,30 @@ appCtrl.controller('singleViewCtrl', [
       $scope.globals.goToDoc(prevDoc.name);
     }
 
-    $scope.labelInputKeyEvents = function (keyEvent, name, newLabels) {
-      if (keyEvent.which === 13) {
-        var that = this;
-        that.tagErrorMsg = false;
-        $scope.docs.appendLabels(name, newLabels)
-          .then(function (labels, response) {
-            cleanLabelInput();
-          });
+    $scope.saveAccData = function () {
+      var docName = $scope.doc.name;
+      var accNumber = parseInt($scope.doc.accountdata.accnumber);
+      var from = $scope.globals.makeMonogDBDate($scope.doc.accountdata.docperiod.from)
+      var to = $scope.globals.makeMonogDBDate($scope.doc.accountdata.docperiod.to)
+      var accData = {
+        accNumber: accNumber,
+        docPeriod: {
+          from: from,
+          to: to,
+        }
       }
+      $scope.docs.saveAccData(docName, accData);
     }
 
-    $scope.removeDocLabel = function (name, label) {
-      $scope.docs.removeLabel(name, label)
-        .then(function (label, response) {
-          cleanLabelInput();
+    $scope.saveNote = function () {
+      var docName = $scope.doc.name;
+      $scope.docs.saveNote(docName, $scope.doc.note)
+        .catch(function (response) {
+          $log.error(response);
         });
     }
 
-    $scope.saveNote = function (name, note) {
-      $scope.docs.saveNote(name, note).catch(function (response) {
-      });
-    }
-
     // Run on start
-
     setupCtrl();
 
   }

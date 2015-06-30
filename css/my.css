@@ -20,7 +20,6 @@ nav#box {
   top: 51px;
 }
 
-
 #workspace {
   padding-top: 0;
   padding-left: 0;
@@ -28,9 +27,21 @@ nav#box {
   margin-top: 0;
 }
 
-h4#filename {
+#workspace:focus {
+  outline: none;
+}
+
+#doc-data {
+  background-color: rgba(0,0,0,0.08);
+  height: 100vh;
+  overflow-y: scroll;
+  padding-bottom: 50px;
+}
+
+#filename {
+  position: fixed;
   margin-top: 0;
-  margin-bottom: 0;
+  margin-bottom: 15px;
   text-align: center;
   background-color: #B7CEDC;
   padding: 8px;
@@ -38,7 +49,14 @@ h4#filename {
   overflow: hidden;
   border-bottom-left-radius: 4px; 
   border-bottom-right-radius: 4px; 
+  z-index: 50000;
+  box-shadow: 0 2px 2px -2px #e4e4e4;
 }
+
+#filename:hover {
+  cursor: pointer;
+}
+
 
 #fileviewerspace {
   padding-top: 0;
@@ -122,7 +140,6 @@ table tr td {
 .navbar {
   margin-bottom: 0;
   background-color: rgba(0,0,0,.02);
-  box-shadow: 0 2px 2px -2px #000000;
   box-shadow: 0 2px 2px -2px #e4e4e4;
 }
 
@@ -149,14 +166,42 @@ span.tag {
 }
 
 .remove-label {
+  cursor: pointer;
 }
 
-#labels ul {
+.append-docnumbers,
+.append-label {
+  font-weight: normal;
+  font-size: 10px;
+  cursor: pointer;
+  margin-right: 10px;
+  margin-bottom: 10px;
+}
+
+#docnumbers-input,
+#labels-input {
+  margin-left: 10px;
+  margin-bottom: 10px;
+  border-radius: 4px;
+  border: 1px solid #ddd;
+}
+
+#docnumbers-input:focus,
+#labels-input:focus {
+  outline: none;
+}
+
+#docnumbers-input {
+  margin-left: 20px;
+}
+
+ul#labels {
   list-style: none;
   overflow: hidden;
+  padding-left: 10px;
 }
 
-#labels ul li {
+ul#labels li {
   float: left;
 }
 
@@ -169,16 +214,100 @@ span.tag {
 
 .section-head {
   min-height: 20px;
-  padding: 10px;
+  padding-top: 10px;
+  padding-bottom: 10px;
+  padding-right: 10px;
+  font-size: 16px;
   font-weight: bold;
+  border-bottom: 1px solid rgba(0,0,0,0.04);
+  cursor: pointer;
 }
 
 .save-note {
   float: right;
 }
 
-#docspace {
-  background-color: rgba(0,0,0,0.08);
-  height: 100vh;
-  overflow-y: scroll;
+
+#docInfos table td {
+  border-top: none;
+  border-bottom: 1px solid #ddd;
+}
+
+#note textarea {
+  background-color: #f8f8f8;
+}
+
+.subsection {
+  font-size: 14px;
+  font-weight: bold;
+}
+
+.docdata-menupoint {
+  display: none;
+}
+
+.menupoint-open {
+  display: block;
+}
+
+.docdata-section {
+  background-color: #f8f8f8;
+  padding-top: 15px;
+  margin-bottom: 25px;
+}
+
+.docdata-ctrls {
+  overflow: hidden;
+}
+
+#section-labels {
+  margin-top: 50px;
+}
+
+#docnumbers {
+  margin-left: 10px;
+}
+
+#accnumber {
+  margin-left: 10px;
+  border-top: 1px solid #ddd;
+  padding-top: 10px;
+}
+
+#accnumber-input {
+  width: 50%;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  margin-left: 5px;
+}
+
+#docperiod {
+  margin-left: 10px;
+}
+
+#from-date,
+#to-date {
+  margin-left: 5px;
+}
+
+.period-date {
+  margin-left: 10px;
+}
+
+#accdata-ctrls {
+  padding: 10px;
+  overflow: hidden;
+}
+
+.save-accdata {
+  margin-right: 10px;
+  float: right;
+  cursor: pointer;
+}
+
+#read-accprocess {
+  margin-left: 10px;
+  border-top: 1px solid #ddd;
+  padding-top: 10px;
+  padding-bottom: 15px;
 }

@@ -13,7 +13,21 @@ appServices.factory('Globals', ['$location',
     return {
       goToDoc: function (docName) {
         $location.url('/docs/'+ docName);
-      }
+      },
+
+      makeMongoDBDate: function (day, month, year) {
+        return year +'-'+ month +'-'+ day +'T00:00:00Z'
+      },
+
+      makeEuroDate: function (timeObj) {
+        if (timeObj !== undefined) {
+          var tmp = timeObj.split("T");
+          var date = tmp[0].split("-");
+          return date[2] +'.'+ date[1] +'.'+ date[0]
+        } else {
+          return '';
+        }
+      },
     }
   }
 ]);
@@ -128,7 +142,7 @@ appServices.factory('Docs', ['$log', '$http', '$q',
       appendLabels: function (name, labels) {
         var jsonReq = {Name: name, Labels: labels}
         var that = this;
-        var deferrd = $q.defer();
+        var deferred = $q.defer();
 
         $http.patch('/DocLabels', JSON.stringify(jsonReq))
           .success(function (response) {
@@ -138,7 +152,7 @@ appServices.factory('Docs', ['$log', '$http', '$q',
               angular.forEach(labels, function (value, key) {
                 that._currDocs[name].labels.push(value);
               });
-              deferred.resolve(labels, response)
+              deferred.resolve(response)
             }
           })
           .error(function (response) {
@@ -160,21 +174,76 @@ appServices.factory('Docs', ['$log', '$http', '$q',
       removeLabel: function (name, label) {
         var that = this;
         var url = '/DocLabels/'+ name +'/'+ label;
+        var deferred = $q.defer();
 
-        return new Promise(function (resolve, reject) {
-          $http.delete(url)
-            .success(function (response) {
-              if (response.Status == 'fail') {
-                reject(response)
-              } else {
-                that._removeLabelFromCurrDocs(name, label);
-                resolve(response)
-              }
-            })
-            .error(function (response) {
-              reject(response)
-            });
+        $http.delete(url)
+          .success(function (response) {
+            if (response.Status == 'fail') {
+              deferred.reject(response)
+            } else {
+              that._removeLabelFromCurrDocs(name, label);
+              deferred.resolve(response)
+            }
+          })
+          .error(function (response) {
+            deferred.reject(response)
+          });
+        
+        return deferred.promise;
+      },
+
+      appendDocNumbers: function (name, numbers) {
+        var jsonReq = {Name: name, DocNumbers: numbers}
+        var that = this;
+        var deferred = $q.defer();
+
+        $http.patch('/DocNumbers', JSON.stringify(jsonReq))
+          .success(function (response) {
+            if (response.Status == 'fail') {
+              deferred.reject(response)
+            } else {
+              angular.forEach(numbers, function (value, key) {
+                that._currDocs[name].accountdata.docnumbers.push(value);
+              });
+              deferred.resolve(response)
+            }
+          })
+          .error(function (response) {
+            deferred.reject(response)
+          });
+
+        return deferred.promise;
+      },
+
+      _removeDocNumberFromCurrDocs: function (name, number) {
+        var that = this;
+        var currDocNumbers = this._currDocs[name].accountdata.docnumbers;
+        angular.forEach(currDocNumbers, function (v, k) {
+          if (number === v) {
+            currDocNumbers.splice(k, 1);
+          }
         });
+      },
+
+      removeDocNumber: function (name, number) {
+        var that = this;
+        var url = '/DocNumbers/'+ name +'/'+ number;
+        var deferred = $q.defer();
+
+        $http.delete(url)
+          .success(function (response) {
+            if (response.Status == 'fail') {
+              deferred.reject(response)
+            } else {
+              that._removeDocNumberFromCurrDocs(name, number);
+              deferred.resolve(response)
+            }
+          })
+          .error(function (response) {
+            deferred.reject(response)
+          });
+
+        return deferred.promise;
 
       },
 
@@ -197,6 +266,41 @@ appServices.factory('Docs', ['$log', '$http', '$q',
             });
         });
 
+      },
+
+      saveAccData: function (name, accData) {
+        var that = this;
+        var request = {
+          Name: name,
+          AccountData: {
+            AccNumber: accData.accNumber,
+            DocPeriod: {
+              from: accData.docPeriod.from,
+              to: accData.docPeriod.to,
+            }
+          }
+        };
+        console.log(request);
+        var url = '/Doc';
+        var deferred = $q.defer();
+
+        $http.patch(url, JSON.stringify(request))
+          .success(function (response) {
+            console.log(response);
+            if (response.Status === 'success') {
+              that._currDocs[name].accountdata.accnumber = accData.accNumber;
+              that._currDocs[name].accountdata.docperiod.from = accData.docPeriod.from;
+              that._currDocs[name].accountdata.docperiod.to = accData.docPeriod.to;
+              deferred.resolve(response);
+            } else if (response.Status === 'fail') {
+              deferred.reject(response);
+            }
+          })
+          .error(function (response) {
+            deferred.reject(response)
+          });
+
+        return deferred.promise;
       },
 
       readDoc: function (name) {

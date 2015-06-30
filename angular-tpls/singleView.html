@@ -9,47 +9,91 @@
 </nav>
 --!>
 <div id="workspace" class="container-fluid" tabindex="0" ng-keypress="actionKeys($event)">
-  <div id="docspace" class="col-md-3"> 
+  <div id="doc-data" class="col-md-3"> 
     <h4 id="filename">
       <button class="btn-lastfile" ng-click="prevDoc()"><span class="glyphicon glyphicon-chevron-left"></span></button>
-      {{doc.name}}
+      <span ng-click="modals.changeDocName.open()">{{doc.name}}</span>
       <button class="btn-nextfile" ng-click="nextDoc()"><span class="glyphicon glyphicon-chevron-right"></span></button>
     </h4>
+    <div id="section-labels">
+      <header class="section-head"
+              ng-click="docDateMenu.labels.toggle()" >
+        Labels 
+      </header>
+      <div class="docdata-section" ng-class="{'menupoint-open': docDataMenu.labels.open}">
+        <ul id="labels">
+          <li ng-repeat="label in doc.labels">
+            <span class="label label-primary">
+              {{label}}
+              <span class="glyphicon glyphicon-remove-circle remove-label" ng-click="removeDocLabel(doc.name, label)"></span>
+            </span>
+          </li>
+        </ul>
+        <div class="docdata-ctrls">
+          <input id="labels-input" type="text" ng-model="labels.input" ng-keypress="labels.keyEvent($event)" ng-list>
+          <span class="glyphicon glyphicon-plus append-label" ng-click="labels.save()"></span>
+        </div>
+      </div>
+    </div>
     <div id="docInfos">
-      <header class="section-head">Allgemein:</header>
+      <header class="section-head">Allgemein</header>
       <table class="table">
         <tbody>
           <tr>
-            <td>Eingangsdatum</td><td>{{doc.infos.dateofreceipt}}</td>
+            <td>Eingangsdatum</td><td>{{doc.infos.dateofreceipt|euroDate}}</td>
           </tr>
           <tr>
-            <td>Scandatum</td><td>{{doc.infos.dateofscan}}</td>
+            <td>Scandatum</td><td>{{doc.infos.dateofscan|euroDate}}</td>
           </tr>
         </tbody>
       </table>
     </div>
     <div id="account-data">
-      <header class="section-head">Buchhaltung:</header>
-      <ul>
-        <li ng-repeat="docnumber in doc.docnumbers">
-          {{docnumber}}
-        </li>
-      </ul>
-    </div>
-    <div id="labels">
-      <header class="section-head">Labels:</header>
-      <ul>
-        <li ng-repeat="label in doc.labels">
-          <span class="label label-primary">
-            {{label}}
-            <span class="glyphicon glyphicon-remove-circle remove-label" ng-click="removeDocLabel(doc.name, label)"></span>
-          </span>
-        </li>
-      </ul>
+      <header class="section-head">Buchhaltung</header>
+      <div class="docdata-section">
+        <div id="docnumbers">
+          <h4 class="subsection">Belegnummern</h4>
+          <ul>
+            <li ng-repeat="docnumber in doc.accountdata.docnumbers">
+            {{docnumber}}
+            <span class="glyphicon glyphicon-remove-circle remove-docnumber" ng-click="docnumbers.remove(docnumber)"></span>
+            </li>
+          </ul>
+          <input type="text" id="docnumbers-input"
+                 ng-model="docnumbers.input" ng-keypress="docnumbers.keyEvent($event)" ng-list>
+          <span class="glyphicon glyphicon-plus append-docnumbers" ng-click="docnumbers.save()"></span>
+        </div>
+        <div id="accnumber" class="input-group">
+          <label for="accnumber-input">Kontonr.:</label>
+          <input type="text" id="accnumber-input" ng-model="doc.accountdata.accnumber">
+        </div>
+        <div id="docperiod">
+          <h4 class="subsection">Belegzeitraum</h4>
+          <div class="input-group period-date">
+            <label for="from-date">Von:</label>
+            <input type="text" id="from-date" ng-model="doc.accountdata.docperiod.from">
+          </div>
+          <div class="input-group period-date">
+            <label for="to-date">Bis:</label>
+            <input type="text" id="to-date" ng-model="doc.accountdata.docperiod.to">
+          </div>
+        </div>
+        <div id="accdata-ctrls">
+          <span class="glyphicon glyphicon-floppy-disk save-accdata" ng-click="saveAccData()"></span>
+        </div>
+        <div id="read-accprocess">
+          <button type="button" class="btn btn-default">Buchungsdaten</button>
+        </div>
+      </div>
     </div>
     <div id="note">
-      <header class="section-head">Notiz: <span class="save-note glyphicon glyphicon-floppy-disk" ng-click="saveNote(doc.name, docNote)"></span></header>
-      <textarea class="note" cols=10 ng-model="docNote">{{doc.note}}</textarea>
+      <header class="section-head">
+        Notiz
+        <span class="save-note glyphicon glyphicon-floppy-disk" ng-click="saveNote()"></span>
+      </header>
+      <div class="docdata-section">
+        <textarea class="note" cols=10 ng-model="doc.note"></textarea>
+      </div>
     </div>
   </div>
   <div id="fileviewerspace" class="col-md-9">
@@ -67,19 +111,20 @@
   </div>
 </div>
 
-<!-- Default Modal to input value ValueTag -->
-<div class="modal fade" id="ValueTag-modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+<!-- Change DocName Modal -->
+<div class="modal fade" id="change-docname-modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
   <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-        <h4 class="modal-title" id="myModalLabel">Wert eingeben</h4>
+        <h4 class="modal-title" id="myModalLabel">Umbenennen</h4>
       </div>
       <div class="modal-body">
         <div class="input-group">
-          <input type="text" class="ValueTag-start form-control" ng-model="valueTagInput" ng-keypress="modalKeyEvents($event, 'ValueTag')">
+          <input type="text" class="change-docname-start form-control"
+                 ng-model="modals.changeDocName.input" ng-keypress="modals.changeDocName.keyEvent($event)">
           <span class="input-group-btn">
-            <button class="btn btn-default" type="button" ng-click="searchStrAppend()">OK!</button>
+            <button class="btn btn-default" type="button" ng-click="modals.changeDocName.save()">OK!</button>
           </span>
         </div>
       </div>
