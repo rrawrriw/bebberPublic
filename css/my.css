@@ -1,7 +1,8 @@
 /*_*/
 
 body {
-  padding-top: 102px;
+  padding-top: 51px;
+  overflow: hidden;
 }
 
 #userdata {
@@ -19,23 +20,62 @@ nav#box {
   top: 51px;
 }
 
+
 #workspace {
   padding-top: 0;
+  padding-left: 0;
+  padding-right: 0;
   margin-top: 0;
 }
 
 h4#filename {
   margin-top: 0;
+  margin-bottom: 0;
   text-align: center;
   background-color: #B7CEDC;
   padding: 8px;
   color: white;
   overflow: hidden;
+  border-bottom-left-radius: 4px; 
+  border-bottom-right-radius: 4px; 
 }
 
 #fileviewerspace {
-  padding-top: 10px;
+  padding-top: 0;
+  padding-left: 0;
   border-left: 1px solid #e7e7e7; 
+  height: 100vh;
+  overflow-y: scroll;
+}
+
+#pdfctrl {
+  margin-right: 0;
+  margin-left: 0;
+  background-color: rgba(0,0,0,0.02);
+  position: fixed;
+  width: 74vw;
+}
+
+#pdfctrol button:focus,
+#pdfctrl button {
+  background: rgba(0,0,0,0);
+  border: none;
+  margin-top: 5px;
+  outline: none;
+}
+
+#pdfctrl-btn-group {
+  float: left;
+  margin-left: 35%;
+  width: 130px;
+}
+
+#pdfpages {
+  float: left; 
+  width: 25px;
+  padding: 0;
+  margin: 0;
+  margin-right: 500px;
 }
 
 .tag-error-msg {
@@ -44,6 +84,10 @@ h4#filename {
   left: 1px;
 }
 
+.btn-changedocname:focus,
+.btn-changedocname,
+.btn-removedoc:focus,
+.btn-removedoc,
 .btn-lastfile:focus,
 .btn-nextfile:focus,
 .btn-lastfile,
@@ -60,6 +104,10 @@ h4#filename {
   float: right;
 }
 
+.btn-removedoc,
+.btn-changedocname {
+  font-size: 14px;
+}
 
 #files {
   padding-left: 0;
@@ -73,6 +121,9 @@ table tr td {
 
 .navbar {
   margin-bottom: 0;
+  background-color: rgba(0,0,0,.02);
+  box-shadow: 0 2px 2px -2px #000000;
+  box-shadow: 0 2px 2px -2px #e4e4e4;
 }
 
 span.tag {
@@ -98,7 +149,15 @@ span.tag {
 }
 
 .remove-label {
-  float: right; 
+}
+
+#labels ul {
+  list-style: none;
+  overflow: hidden;
+}
+
+#labels ul li {
+  float: left;
 }
 
 .note {
@@ -109,9 +168,6 @@ span.tag {
 }
 
 .section-head {
-  background-color: #f8f8f8;
-  border-top-left-radius: 10px 5px;
-  border-top-right-radius: 10px 5px;
   min-height: 20px;
   padding: 10px;
   font-weight: bold;
@@ -119,4 +175,10 @@ span.tag {
 
 .save-note {
   float: right;
+}
+
+#docspace {
+  background-color: rgba(0,0,0,0.08);
+  height: 100vh;
+  overflow-y: scroll;
 }
