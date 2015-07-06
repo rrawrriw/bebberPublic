@@ -2,6 +2,7 @@
 
 var app = angular.module('bebber', [
   'ngRoute',
+  'appDirectives',
   'appCtrl',
   'appFilters',
   'pdf',

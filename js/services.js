@@ -8,18 +8,25 @@ appServices.factory('User', ['$resource',
   }
 ]);
 
-appServices.factory('Globals', ['$location',
-  function($location) {
+appServices.factory('Globals', ['$location','$rootScope', '$timeout',
+  function($location, $rootScope, $timeout) {
+
+    $rootScope.globalErrMsg = {
+      show: false,
+      msg: "",
+    }
+
     return {
       goToDoc: function (docName) {
         $location.url('/docs/'+ docName);
       },
 
-      makeMongoDBDate: function (day, month, year) {
-        return year +'-'+ month +'-'+ day +'T00:00:00Z'
+      makeMongoDBDate: function (euroDate) {
+        var tmp = euroDate.split('.');
+        return tmp[2] +'-'+ tmp[1] +'-'+ tmp[0] +'T00:00:00Z'
       },
 
-      makeEuroDate: function (timeObj) {
+      makeEuroDateFormat: function (timeObj) {
         if (timeObj !== undefined) {
           var tmp = timeObj.split("T");
           var date = tmp[0].split("-");
@@ -28,6 +35,17 @@ appServices.factory('Globals', ['$location',
           return '';
         }
       },
+
+      globalErrMsg: function (msg) {
+        $rootScope.globalErrMsg.show = true;
+        $rootScope.globalErrMsg.msg = msg;
+
+        $timeout(function () {
+          $rootScope.globalErrMsg.show = false;
+        }, 10000);
+      },
+
+
     }
   }
 ]);
@@ -250,21 +268,43 @@ appServices.factory('Docs', ['$log', '$http', '$q',
       saveNote: function (name, note) {
         var that = this;
         var request = {"Name": name, "Note": note}
-        console.log(note);
-        return new Promise(function (resolve, reject) {
-          $http.patch('/Doc', JSON.stringify(request))
-            .success(function (response) {
-              if (response.Status == 'fail') {
-                reject(response)
-              } else {
-                that._currDocs[name].note = note;
-                resolve(note, response)
-              }
-            })
-            .error(function (response) {
-              reject(response)
-            });
-        });
+        var deferred = $q.defer();
+
+        $http.patch('/Doc', JSON.stringify(request))
+          .success(function (response) {
+            if (response.Status === 'fail') {
+              deferred.reject(response)
+            } else if (response.Status === 'success') {
+              that._currDocs[name].note = note;
+              deferred.resolve(note, response)
+            }
+          })
+          .error(function (response) {
+            deferred.reject(response)
+          });
+
+        return deferred.promise;
+
+      },
+
+      changeDocName: function (name, newName) {
+        var deferred = $q.defer();
+        var url = '/DocRename';
+        var request = {Name: name, NewName: newName};
+
+        $http.patch(url, JSON.stringify(request))
+          .success(function (response) {
+            if (response.Status === 'success') {
+              deferred.resolve(response);
+            } else if (response.Status === 'fail') {
+              deferred.reject(response);
+            }
+          })
+          .error(function (response) {
+            deferred.reject(response);
+          });
+
+        return deferred.promise;
 
       },
 
@@ -280,13 +320,11 @@ appServices.factory('Docs', ['$log', '$http', '$q',
             }
           }
         };
-        console.log(request);
         var url = '/Doc';
         var deferred = $q.defer();
 
         $http.patch(url, JSON.stringify(request))
           .success(function (response) {
-            console.log(response);
             if (response.Status === 'success') {
               that._currDocs[name].accountdata.accnumber = accData.accNumber;
               that._currDocs[name].accountdata.docperiod.from = accData.docPeriod.from;
@@ -339,3 +377,87 @@ appServices.factory('Docs', ['$log', '$http', '$q',
     }
   }
 ]);
+
+appServices.factory('AccProcess', ['$http', '$q',
+  function ($http, $q) {
+    return {
+      searchResult: [],
+      findByDocNumber: function (docNumber) {
+        var deferred = $q.defer();
+        var url = '/AccProcess/FindByDocNumber/'+ docNumber 
+        $http.get(url)
+          .success(function (response) {
+            if (response.Status === 'success') {
+              deferred.resolve(response);
+            } else if (response.Status === 'fail') {
+              deferredk.reject(response);
+            }
+          })
+          .error(function (response) {
+            deferredk.reject(response);
+          });
+
+        return deferred.promise;
+      },
+
+      findByAccNumber: function (accNumber, from, to) {
+        var deferred = $q.defer();
+        var url = '/AccProcess/FindByAccNumber/'
+          + from +'/'+ to +'/'+ accNumber;
+        $http.get(url)
+          .success(function (response) {
+            if (response.Status === 'success') {
+              deferred.resolve(response);
+            } else if (response.Status === 'fail') {
+              deferred.reject(response);
+            }
+          })
+          .catch(function (response) {
+            deferred.reject(response);
+          });
+
+        return deferred.promise;
+      },
+
+      findAll: function (docNumbers, accNumber, from, to) {
+        var that = this;
+        var deferred = $q.defer();
+        var promises = [];
+        from = this.makeURLDate(from);
+        to = this.makeURLDate(to);
+
+        angular.forEach(docNumbers, function (v, k) {
+          promises.push(that.findByDocNumber(v));
+        });
+
+        promises.push(that.findByAccNumber(accNumber, from, to));
+
+        $q.all(promises)
+          .then(function (responseArray) {
+            var searchResult = [];
+            angular.forEach(responseArray, function (response, k) {
+              angular.forEach(response.AccProcessList, function (accProcess, k) {
+                searchResult.push(accProcess);
+              });
+            });
+            that.searchResult = searchResult;
+            deferred.resolve(searchResult);
+          })
+          .catch(function (responseArray) {
+            deferred.reject(responseArray);
+          });
+
+        return deferred.promise;
+
+      },
+
+      makeURLDate: function (dateObj) {
+        var tmp = dateObj.split('T');
+        var dmy = tmp[0].split('-');
+        return dmy[2]+dmy[1]+dmy[0];
+      }
+
+
+    }
+  }
+])

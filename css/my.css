@@ -5,6 +5,31 @@ body {
   overflow: hidden;
 }
 
+input {
+  padding-left: 5px;
+}
+
+#global-err-msg {
+  z-index: 60000;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  border-radius: 0;
+}
+
+.show-global-err-msg {
+  display: block;
+}
+
+.hide-global-err-msg {
+  display: none;
+}
+
+.glow-green {
+  background-color: rgb(224, 255, 209) !important;
+}
+
 #userdata {
   margin-right: 45px;
 }
@@ -49,7 +74,7 @@ nav#box {
   overflow: hidden;
   border-bottom-left-radius: 4px; 
   border-bottom-right-radius: 4px; 
-  z-index: 50000;
+  z-index: 100;
   box-shadow: 0 2px 2px -2px #e4e4e4;
 }
 
@@ -207,9 +232,14 @@ ul#labels li {
 
 .note {
   border: 1px solid #f8f8f8; 
+  background-color: #f8f8f8;
   outline: none;
   width: 100%;
   height: 100px;
+}
+
+.save-note {
+  float: right;
 }
 
 .section-head {
@@ -223,18 +253,9 @@ ul#labels li {
   cursor: pointer;
 }
 
-.save-note {
-  float: right;
-}
-
-
 #docInfos table td {
   border-top: none;
   border-bottom: 1px solid #ddd;
-}
-
-#note textarea {
-  background-color: #f8f8f8;
 }
 
 .subsection {
@@ -288,6 +309,8 @@ ul#labels li {
 #from-date,
 #to-date {
   margin-left: 5px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
 }
 
 .period-date {
@@ -311,3 +334,8 @@ ul#labels li {
   padding-top: 10px;
   padding-bottom: 15px;
 }
+
+.accProcess-modal .modal-dialog {
+  width: 90%;
+}
+

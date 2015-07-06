@@ -15,13 +15,22 @@
     <script src="public/ext/angular-route/angular-route.min.js"></script>
     <script src="public/ext/angular-resource/angular-resource.min.js"></script>
     <script src="public/ext/angular-pdf-viewer/angular-pdf-viewer.min.js"></script>
+    <script src="public/ext/angular-ui/ui-bootstrap-tpls-0.13.0.min.js"></script>
     <script src="public/js/main.js"></script>
+    <script src="public/js/directives.js"></script>
     <script src="public/js/filters.js"></script>
     <script src="public/js/services.js"></script>
     <script src="public/js/controller.js"></script>
   </head>
  
   <body ng-controller="initCtrl">
+    <div id="global-err-msg" class="alert alert-danger alert-dismissible" 
+         ng-class="globalErrMsg.show ? 'show-global-err-msg':'hide-global-err-msg'">
+      <button type="button" class="close" data-dismiss="alert" aria-label="Close" ng-click="globalErrMsg.show=false">
+        <span aria-hidden="true">&times;</span>
+      </button>
+      <strong>{{globalErrMsg.msg}}</strong>
+    </div>
     <header id="top">
       <div class="navbar navbar-default navbar-fixed-top">
         <div class="container-fluid">

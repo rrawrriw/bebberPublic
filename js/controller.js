@@ -1,12 +1,16 @@
 'use strict'
 
-var appCtrl = angular.module('appCtrl', ['appServices']);
+var appCtrl = angular.module('appCtrl', [
+    'appServices',
+    'ui.bootstrap',
+]);
 
 var buildJsonTagsStr = function (tags) {
   return "" 
 }
 
-appCtrl.controller('initCtrl', function($scope) {});
+appCtrl.controller('initCtrl', function($scope) {
+});
 
 
 appCtrl.controller('loginCtrl', ['$scope', '$rootScope', '$http', '$location', '$log', 'User', 
@@ -49,11 +53,12 @@ appCtrl.controller('newDocsCtrl', ['$scope', '$location', 'Docs', 'Globals',
 
 appCtrl.controller('singleViewCtrl', [
   '$scope', '$rootScope', '$http', '$log', '$routeParams', '$location', '$q',
-  '$timeout', '$document', 'pdfDelegate', 'User', 'SearchStr', 'Docs',
-  'Globals',
+  '$timeout', '$document', '$modal', 'pdfDelegate', 'User',
+  'SearchStr', 'Docs', 'Globals', 'AccProcess',
   function ($scope, $rootScope, $http, $log, $routeParams, 
-    $location, $q, $timeout, $document, pdfDelegate, User, SearchStr, Docs, Globals) {
-
+    $location, $q, $timeout, $document, $modal, pdfDelegate, User,
+    SearchStr, Docs, Globals, AccProcess) {
+  
     var setupCtrl = function () {
       $rootScope.searchStrDraftAmount = 0;
 
@@ -64,81 +69,11 @@ appCtrl.controller('singleViewCtrl', [
 
       $scope.searchStr = SearchStr;
 
+      $scope.accProcess = AccProcess;
+
       $scope.docName = $routeParams.docName;
       $scope.docs = Docs;
       $scope.doc = $scope.docs.readDoc($scope.docName);
-
-      $scope.modals = {
-        changeDocName: {
-          id: "change-docname",
-          input: "",
-          save: function () {
-            $log.debug('save '+ this.input);
-            this.input = undefined;
-          },
-          keyEvent: function (keyEvent) {
-            $log.debug(keyEvent);
-          },
-          open: function () {
-            var that = this;
-            $log.debug('open modal '+ this.id);
-            openModal(this.id).then(function (modal) {
-              $log.debug($scope.doc.name);
-              $log.debug(modal);
-              angular.element('.'+ that.id +'-start').val($scope.doc.name);
-            });
-          },
-        },
-
-      };
-
-      $scope.labels = {
-        input: [],
-        save: function () {
-          var docName = $scope.doc.name;
-          var that = this;
-          $scope.docs.appendLabels(docName, this.input)
-            .then(function (response) {
-              if (response.Status === "success") {
-                $log.debug(response);
-                that.input = [];
-              } else if (response.Status === "fail") {
-                $log.error(response);
-              }
-            });
-        },
-        keyEvent: function (keyEvent) {
-          if (keyEvent.which === 13) {
-            this.save()
-          }
-        },
-      };
-
-      $scope.docnumbers = {
-        input: [],
-        save: function () {
-          var docName = $scope.doc.name;
-          var that = this;
-          $scope.docs.appendDocNumbers(docName, this.input)
-            .then(function (response) {
-              if (response.Status === "success") {
-                $log.debug(response);
-                that.input = [];
-              } else if (response.Status === "fail") {
-                $log.error(response);
-              }
-            });
-        },
-        keyEvent: function (keyEvent) {
-          if (keyEvent.which === 13) {
-            this.save()
-          }
-        },
-        remove: function (number) {
-          $scope.docs.removeDocNumber($scope.doc.name, number);
-        }
-      };
-
 
       // Dev
       $scope.user = User;
@@ -150,10 +85,164 @@ appCtrl.controller('singleViewCtrl', [
           docs.saveDocs(docs.searchResult);
           $scope.docName = $routeParams.docName;
           $scope.doc = $scope.docs.readDoc($scope.docName);
+          $rootScope.doc = $scope.doc;
+          $rootScope.docs = $scope.docs;
+          var from = $scope.globals.makeEuroDateFormat($scope.doc.accountdata.docperiod.from);
+          var to = $scope.globals.makeEuroDateFormat($scope.doc.accountdata.docperiod.to);
+          $scope.doc.accountdata.docperiod.fromProxy = from;
+          $scope.doc.accountdata.docperiod.toProxy = to;
           setupPDF()
         });
       // End Dev
       
+      //var g = $scope.globals
+      //var from = g.makeEuroDateFormat($scope.doc.accountdata.docperiod.from);
+      //var to = g.makeEuroDateFormat($scope.doc.accountdata.docperiod.to);
+      //$scope.doc.accountdata.docperiod.fromProxy = from;
+      //$scope.doc.accountdata.docperiod.toProxy = to;
+
+      $scope.modals = {
+        changeDocName: {
+          id: "change-docname",
+          input: "",
+          modal: undefined,
+          save: function () {
+            var that = this;
+            $scope.docs.changeDocName($scope.doc.name, this.input)
+              .then(function (response) {
+                $log.debug('renamed '+ that.input);
+                $scope.doc.name = that.input;
+                that.modal.close(that.input)
+                that.input = undefined;
+                $scope.globals.goToDoc($scope.doc.name);
+              })
+              .catch(function (response) {
+                $scope.globals.globalErrMsg(response.Msg);
+              });
+          },
+          keyEvent: function (keyEvent) {
+            if (keyEvent.which === 13) {
+              this.save();
+            }
+          },
+          open: function () {
+            var that = this;
+
+            this.modal = $modal.open({
+              animation: true,
+              templateUrl: '/public/angular-tpls/changeDocNameModal.html', 
+              scope: $scope,
+            });
+
+            this.modal.opened.then(function () {
+              $log.debug($scope.doc.name);
+              that.input = $scope.doc.name;
+              angular.element('.changeDocName-start').focus(); 
+            });
+
+          },
+          cancel: function () {
+            this.modal.dismiss('cancel');
+          }
+        },
+
+        accProcess: {
+          modal: undefined,
+          open: function () {
+            var that = this;
+            var docNumbers = $scope.doc.accountdata.docnumbers;
+            var accNumber = $scope.doc.accountdata.accnumber;
+            var from = $scope.doc.accountdata.docperiod.from;
+            var to = $scope.doc.accountdata.docperiod.to;
+            $scope.accProcess.findAll(docNumbers, accNumber, from, to)
+              .then(function (accProcess) {
+
+                that.modal = $modal.open({
+                  animation: true,
+                  templateUrl: '/public/angular-tpls/accProcessModal.html',
+                  scope: $scope,
+                  windowClass: 'accProcess-modal'
+                });
+
+
+              })
+              .catch(function (response) {
+                $scope.globals.globalErrMsg(response.Msg)
+              });
+          },
+          cancel: function () {
+            this.modal.dismiss('cancel');
+          },
+
+        },
+
+      };
+
+      $scope.labels = {
+        input: [],
+        save: function () {
+          var docName = $scope.doc.name;
+          var that = this;
+          $scope.docs.appendLabels(docName, this.input)
+            .then(function (response) {
+              $log.debug("Aw:"+ response);
+              that.input = [];
+            })
+            .catch(function (response) {
+              $log.error(response);
+              $scope.globals.globalErrMsg(response.Msg);
+            });
+        },
+        keyEvent: function (keyEvent) {
+          if (keyEvent.which === 13) {
+            this.save()
+          }
+        },
+        remove: function (label) {
+          var docName = $scope.doc.name;
+          $scope.docs.removeLabel(docName, label)
+            .then(function (response) {
+              $log.debug(response);
+            })
+            .catch(function (response) {
+              $log.debug(response);
+              $scope.globals.globalErrMsg(response);
+            });
+        }
+      };
+
+      $scope.docnumbers = {
+        input: [],
+        save: function () {
+          var docName = $scope.doc.name;
+          var that = this;
+          $scope.docs.appendDocNumbers(docName, this.input)
+            .then(function (response) {
+              $log.debug(response);
+              that.input = [];
+            })
+            .catch(function (response) {
+              $log.error(response);
+              $scope.globals.globalErrMsg(response);
+            });
+        },
+        keyEvent: function (keyEvent) {
+          if (keyEvent.which === 13) {
+            this.save()
+          }
+        },
+        remove: function (number) {
+          $scope.docs.removeDocNumber($scope.doc.name, number)
+            .then(function (response) {
+              $log.debug(response);
+            })
+            .catch(function (response) {
+              $log.error(response);
+              $scope.globals.globalErrMsg(response);
+            });
+        }
+      };
+
       //setupPDF()
       
     }
@@ -200,18 +289,6 @@ appCtrl.controller('singleViewCtrl', [
 
         });
         */
-    }
-
-    var openModal = function (id) {
-      var deferred = $q.defer();
-
-      var modal = angular.element('#'+id+'-modal')
-      modal.on('shown.bs.modal', function (e) {
-        angular.element('.'+id+'-start').focus();
-        deferred.resolve(modal);
-      }).modal('show');
-
-      return deferred.promise;
     }
 
     var backToSearchInput = function () {
@@ -307,10 +384,11 @@ appCtrl.controller('singleViewCtrl', [
     }
 
     $scope.saveAccData = function () {
+      var g = $scope.globals
       var docName = $scope.doc.name;
       var accNumber = parseInt($scope.doc.accountdata.accnumber);
-      var from = $scope.globals.makeMonogDBDate($scope.doc.accountdata.docperiod.from)
-      var to = $scope.globals.makeMonogDBDate($scope.doc.accountdata.docperiod.to)
+      var from = g.makeMongoDBDate($scope.doc.accountdata.docperiod.fromProxy)
+      var to = g.makeMongoDBDate($scope.doc.accountdata.docperiod.toProxy)
       var accData = {
         accNumber: accNumber,
         docPeriod: {
@@ -318,15 +396,41 @@ appCtrl.controller('singleViewCtrl', [
           to: to,
         }
       }
-      $scope.docs.saveAccData(docName, accData);
+      $scope.docs.saveAccData(docName, accData)
+        .then(function (response) {
+          $log.debug("successfully saved accountd data");
+          $scope.doc.accountdata.accnumber = accNumber;
+          $scope.doc.accountdata.docperiod.from = from;
+          $scope.doc.accountdata.docperiod.to = to;
+          $scope.accDataGlowGreen = true;
+          $timeout(function () {
+            $scope.accDataGlowGreen = false;
+          }, 2000);
+        })
+        .catch(function (response) {
+          $log.error(response);
+          $scope.globals.globalErrMsg(response);
+        });
     }
 
     $scope.saveNote = function () {
       var docName = $scope.doc.name;
       $scope.docs.saveNote(docName, $scope.doc.note)
+        .then(function (response) {
+          $log.debug("Save succesfully");
+          $scope.noteGlowGreen = true;
+          $timeout(function () {
+            $scope.noteGlowGreen = false;
+          }, 2000);
+        })
         .catch(function (response) {
           $log.error(response);
+          $scope.globals.globalErrMsg(response);
         });
+    }
+
+    $scope.shortcuts = function (keyEvent) {
+      console.log(keyEvent)
     }
 
     // Run on start

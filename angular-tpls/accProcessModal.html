@@ -1,0 +1,38 @@
+<div class="modal-header">
+  <button type="button" class="close"><span ng-click="modals.accProcess.cancel()">&times;</span></button>
+  <h4 class="modal-title" id="myModalLabel">Buchhaltungsdaten</h4>
+</div>
+<div class="modal-body">
+  <table class="table table-hover">
+    <thead>
+      <tr>
+        <th>Belegd.</th>
+        <th>Buchungsd.</th>
+        <th>Belegnrkreis</th>
+        <th>Belegnr.</th>
+        <th>Text</th>
+        <th>Betrag €</th>
+        <th>Sollk.</th>
+        <th>Habenk.</th>
+        <th>Steuerschl.</th>
+        <th>Kostenst. 1</th>
+        <th>Kostenst. 2</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr ng-repeat="acp in accProcess.searchResult">
+        <td>{{acp.DocDate|euroDate}}</td>
+        <td>{{acp.DateOfEntry|euroDate}}</td>
+        <td>{{acp.DocNumberRange}}</td>
+        <td>{{acp.DocNumber}}</td>
+        <td>{{acp.PostingText}}</td>
+        <td>{{acp.AmountPosted}}</td>
+        <td>{{acp.CreditAcc}}</td>
+        <td>{{acp.DebitAcc}}</td>
+        <td>{{acp.TaxCode}}</td>
+        <td>{{acp.CostUnit1}}</td>
+        <td>{{acp.CostUnit2}}</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
