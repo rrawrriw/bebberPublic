@@ -18,7 +18,11 @@ appServices.factory('Globals', ['$location','$rootScope', '$timeout',
 
     return {
       goToDoc: function (docName) {
-        $location.url('/docs/'+ docName);
+        $location.url('/searchResult/'+ docName);
+      },
+
+      goToLogin: function () {
+        $location.url('/login');
       },
 
       makeMongoDBDate: function (euroDate) {
@@ -71,28 +75,6 @@ appServices.factory('SearchStr', function() {
       return JSON.stringify(searchStr);
 
     },
-    append: function (tagName, obj) {
-      return this._draft[tagName] = obj;
-    },
-    readDraft: function () {
-      return this._draft;
-    },
-    removeDraft: function (tagName) {
-      delete this._draft[tagName]
-    },
-    amountDraft: function () {
-      var amount = 0;
-      angular.forEach(this._draft, function (v,k) {
-        amount += 1;
-      });
-      return amount;
-    },
-    clearDraft: function () {
-      var that = this;
-      angular.forEach(this._draft, function (v,k) {
-        that.removeDraft(k);
-      });
-    }
   }
 });
 
@@ -111,9 +93,7 @@ appServices.factory('Docs', ['$log', '$http', '$q',
 
         $http.post('/Search', searchStrJSON)
           .success(function (result) {
-            console.log("success func");
-            that.searchResult = result;
-            deferred.resolve(that);
+            deferred.resolve(result);
           })
           .error(function (data) {
             deferred.reject(data);
@@ -123,8 +103,8 @@ appServices.factory('Docs', ['$log', '$http', '$q',
       },
 
       saveDocs: function (docs) {
-        console.log(docs);
         var that = this;
+        this._currDocs = {};
         angular.forEach(docs, function (v, k) {
           that._currDocs[v.name] = v;
         });
@@ -132,15 +112,19 @@ appServices.factory('Docs', ['$log', '$http', '$q',
       },
 
       readCurrDocs: function () {
+        var that = this;
         var currDocs = [];
-        angular.forEach(this._currDocs, function (v, k) {
-          currDocs.push(v);
+        angular.forEach(this._sortedDocNames, function (v, k) {
+          currDocs.push(that._currDocs[v.name]);
         });
         return currDocs;
       },
 
       sortByDateOfScan: function () {
         var that = this;
+
+        this._sortedDocNames = [];
+
         angular.forEach(this._currDocs, function (v, k) {
           that._sortedDocNames.push({name: v.name, dateOfScan: v.infos.dateofscan})
         });
@@ -210,10 +194,29 @@ appServices.factory('Docs', ['$log', '$http', '$q',
         return deferred.promise;
       },
 
+      contains: function (list, obj) {
+        var contain = false;
+        angular.forEach(list, function (v, k) {
+          if (v === obj) {
+            contain = true;
+            return
+          }
+        })
+
+        return contain;
+      },
+
       appendDocNumbers: function (name, numbers) {
         var jsonReq = {Name: name, DocNumbers: numbers}
         var that = this;
         var deferred = $q.defer();
+
+        var currDocNumbers = this._currDocs[name].accountdata.docnumbers;
+        angular.forEach(numbers, function (v, k) {
+          if (that.contains(currDocNumbers, v)) {
+            numbers.splice(k, 1);
+          }
+        });
 
         $http.patch('/DocNumbers', JSON.stringify(jsonReq))
           .success(function (response) {
@@ -287,7 +290,14 @@ appServices.factory('Docs', ['$log', '$http', '$q',
 
       },
 
+      _changeDocNameFromCurrDocs: function (name, newName) {
+        this._currDocs[newName] = this._currDocs[name];
+        delete this._currDocs[name];
+
+      },
+
       changeDocName: function (name, newName) {
+        var that = this;
         var deferred = $q.defer();
         var url = '/DocRename';
         var request = {Name: name, NewName: newName};
@@ -295,6 +305,7 @@ appServices.factory('Docs', ['$log', '$http', '$q',
         $http.patch(url, JSON.stringify(request))
           .success(function (response) {
             if (response.Status === 'success') {
+              that._changeDocNameFromCurrDocs(name, newName);
               deferred.resolve(response);
             } else if (response.Status === 'fail') {
               deferred.reject(response);
@@ -358,16 +369,16 @@ appServices.factory('Docs', ['$log', '$http', '$q',
       nextDoc: function () {
         if ((this._index + 1) < this._sortedDocNames.length) {
           this._index += 1;
-        } else if ((this._index + 1) > this._sortedDocNames.length) {
+        } else if ((this._index + 1) >= this._sortedDocNames.length) {
           this._index = 0;
         }
         return this.readDocByIndex(this._index);
       },
 
       prevDoc: function () {
-        if ((this._index - 1) < 0) {
-          this._index = 0;
-        } else if ((this._index - 1) >= 0){
+        if (this._index === 0) {
+          this._index = this._sortedDocNames.length-1;
+        } else { 
           this._index -= 1;
         }
         return this.readDocByIndex(this._index);

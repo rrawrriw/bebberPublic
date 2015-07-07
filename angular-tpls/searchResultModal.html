@@ -1,0 +1,26 @@
+<div class="modal-header">
+  <button type="button" class="close" ng-click="cancel()"><span>&times;</span></button>
+  <h4 class="modal-title" id="myModalLabel">Suchergebnis</h4>
+</div>
+<div class="modal-body" ng-keypress="keyEvents($event)">
+  <div id="searchResultList">
+    <table class="table table-striped">
+      <thead>
+        <tr>
+          <th>Dateiname</th>
+          <th>Labels</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr ng-repeat="doc in result">
+          <td>{{doc.name}}</td>
+          <td>{{doc.labels.join(', ')}}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+<div class="modal-footer">
+  <button class="btn btn-warning" ng-click="use()">OK!</button>
+  <button class="btn btn-primary" ng-click="cancel()">Cancel</button>
+</div>

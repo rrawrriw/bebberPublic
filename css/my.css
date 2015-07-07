@@ -92,14 +92,15 @@ nav#box {
 }
 
 #pdfctrl {
+  position: fixed;
   margin-right: 0;
   margin-left: 0;
   background-color: rgba(0,0,0,0.02);
-  position: fixed;
   width: 74vw;
+  overflow: hidden;
 }
 
-#pdfctrol button:focus,
+#pdfctrl button:focus,
 #pdfctrl button {
   background: rgba(0,0,0,0);
   border: none;
@@ -110,15 +111,10 @@ nav#box {
 #pdfctrl-btn-group {
   float: left;
   margin-left: 35%;
-  width: 130px;
+  width: 160px;
 }
 
 #pdfpages {
-  float: left; 
-  width: 25px;
-  padding: 0;
-  margin: 0;
-  margin-right: 500px;
 }
 
 .tag-error-msg {
@@ -172,11 +168,22 @@ span.tag {
   margin-right: 5px;
 }
 
-#searchstr-draft {
+#searchform {
+  position: absolute;
   z-index: 200;
   min-width: 400px;
   min-height: 200px;
   padding: 10px;
+  background-color: white;
+  border-radius: 4px;
+  border: 1px solid #ddd;
+  margin-top: 2px;
+}
+
+#searchResultList {
+  overflow-y: scroll;
+  height: 400px;
+  border: 1px solid #ddd;
 }
 
 #file-navbar {
@@ -220,6 +227,10 @@ span.tag {
   margin-left: 20px;
 }
 
+.remove-docnumber {
+  cursor: pointer;
+}
+
 ul#labels {
   list-style: none;
   overflow: hidden;
@@ -228,6 +239,7 @@ ul#labels {
 
 ul#labels li {
   float: left;
+  margin-right: 3px;
 }
 
 .note {

@@ -106,14 +106,14 @@
   <div id="fileviewerspace" class="col-md-9">
     <div id="pdfctrl">
       <div id="pdfctrl-btn-group">
-        <button ng-click="prevPage()"><span class="glyphicon glyphicon-chevron-left"></span></button>
-        <button ng-click="zoomIn()"><span class="glyphicon glyphicon-zoom-in"></span></button>
-        <button ng-click="zoomOut()"><span class="glyphicon glyphicon-zoom-out"></span></button>
-        <button ng-click="nextPage()"><span class="glyphicon glyphicon-chevron-right"></span></button>
+        <button ng-click="pdf.prevPage()"><span class="glyphicon glyphicon-chevron-left"></span></button>
+        <button ng-click="pdf.zoomIn()"><span class="glyphicon glyphicon-zoom-in"></span></button>
+        <button ng-click="pdf.zoomOut()"><span class="glyphicon glyphicon-zoom-out"></span></button>
+        <button ng-click="pdf.nextPage()"><span class="glyphicon glyphicon-chevron-right"></span></button>
+        <button>{{pdf.currPage}} / {{pdf.totalPages}}</button>
       </div>
-      <p id="pdfpages">{{currentPage}}/{{totalPages}}</p>
     </div>
-    <pdf-viewer delegate-handle="pdfFile" url="pdfUrl" scale="1.3"></pdf-viewer> 
+    <pdf-viewer delegate-handle="pdfFile" url="pdf.url" scale="1.3"></pdf-viewer> 
     <!-- <canvas id="pdf-files"></canvas> -->
   </div>
 </div>

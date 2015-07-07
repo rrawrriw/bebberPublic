@@ -43,29 +43,38 @@
             <form class="navbar-form navbar-left">
               <div class="form-group">
                 <div class="dropdown">
-                  <input id="search-input" type="text" class="form-control" placeholder="Add Search Param..."
-                         ng-model="searchInput" ng-keypress="searchKeyEvents($event)"
-                         ng-focus="openSearchStrDraft()">
-                  <button class="btn btn-default" type="button" ng-click="openSearchStrDraft()">
+                  <button class="btn btn-default" type="button" ng-click="searchForm.toggle()">
+                    Suchformular
                     <span class="glyphicon glyphicon-list-alt"></span>
-                    <span class="badge">{{searchStrDraftAmount}}</span>
                   </button>
-                  <button class="btn btn-default" type="button" ng-click="findFiles()">Go!</button>
-                  <div id="searchstr-draft" class="dropdown-menu">
-                    <ul id="searchstr-draft" class="list-group">
-                      <li class="list-group-item" ng-repeat="(tagName,obj) in searchStrDrafts">
+                  <div id="searchform" collapse="searchForm.opened">
+                    <ul class="list-group">
+                      <li class="list-group-item">
                         <div class="input-group">
-                          <span class="input-group-addon" id="sizing-addon1">{{tagName}}</span>
-                          <input type="text" class="form-control" placeholder="Username" aria-describedby="sizing-addon1" value="{{obj}}">
+                          <span class="input-group-addon" id="sizing-addon1">Labels:</span>
+                          <input type="text" class="form-control" placeholder="Labels"
+                                 ng-model="searchForm.labels" ng-list ng-keypress="searchForm.keyEvents($event)">
                         </div>
-                        <span class="remove-draft glyphicon glyphicon-remove-circle" 
-                              ng-click="removeDraftStr(tagName)"></span>
+                      </li>
+                      <li class="list-group-item">
+                        <div class="input-group">
+                          <span class="input-group-addon" id="sizing-addon1">Belegnummern:</span>
+                          <input type="text" class="form-control" placeholder="Belegnummern"
+                                 ng-model="searchForm.docNumbers" ng-list ng-keypress="searchForm.keyEvents($event)">
+                        </div>
+                      </li>
+                      <li class="list-group-item">
+                        <div class="input-group">
+                          <span class="input-group-addon" id="sizing-addon1">Dateiname:</span>
+                          <input type="text" class="form-control" placeholder="Dateiname"
+                                 ng-model="searchForm.docName" ng-keypress="searchForm.keyEvents($event)">
+                        </div>
                       </li>
                     </ul>
                     <div class="btn-group">
-                      <button class="btn btn-default" type="button" ng-click="findFiles()">Go!</button>
-                      <button class="btn btn-default" type="button" ng-click="closeSearchStrDraft()">Close</button>
-                      <button class="btn btn-default" type="button" ng-click="clearSearchStrDraft()">Clear</button>
+                      <button class="btn btn-default" type="button" ng-click="searchForm.findDocs()">Go!</button>
+                      <button class="btn btn-default" type="button" ng-click="searchForm.toggle()">Close</button>
+                      <button class="btn btn-default" type="button" ng-click="searchForm.clear()">Clear</button>
                     </div>
                   </div>
                 </div>

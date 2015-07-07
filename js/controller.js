@@ -5,13 +5,125 @@ var appCtrl = angular.module('appCtrl', [
     'ui.bootstrap',
 ]);
 
-var buildJsonTagsStr = function (tags) {
-  return "" 
-}
+appCtrl.controller('initCtrl', [
+  '$scope',
+  '$http', 
+  '$modal', 
+  'Docs', 
+  'Globals',
+  function($scope, $http, $modal, Docs, Globals) {
 
-appCtrl.controller('initCtrl', function($scope) {
-});
+    $scope.globals = Globals;
+    $scope.docs = Docs;
 
+    $scope.searchForm = {
+      labels: [],
+      docNumbers: [],
+      docName: "",
+      opened: true,
+      findDocs: function () {
+        var that = this;
+        var request = this.makeSearchJSON();
+
+        if (!angular.isDefined(request)) {
+          return
+        }
+        
+        $scope.docs.find(request)
+          .then(function (result) {
+            var modal = $modal.open({
+              animation: true,
+              templateUrl: '/public/angular-tpls/searchResultModal.html',
+              controller: 'searchResultModalCtrl',
+              size: 'lg',
+              resolve: {
+                'result': function () { return result },
+              },
+            });
+            modal.result.then(function () {
+              that.toggle();
+            });
+          })
+          .catch(function (response) {
+            $scope.globals.globalErrMsg(response.Msg);
+          });
+
+      },
+
+      toggle: function () {
+        this.opened = !this.opened;
+      },
+
+      clear: function () {
+        this.labels = [];
+        this.docNumbers = [];
+        this.docName = "";
+      },
+
+      keyEvents: function (keyEvent) {
+        if (keyEvent.which === 13) {
+          this.findDocs();
+        }
+      },
+
+      makeSearchJSON: function () {
+        var searchObj = {};
+        var valid = 0;
+        
+        if (this.labels.length > 0) {
+          searchObj['labels'] = {'$in': this.labels};
+          valid += 1;
+        }
+        if (this.docNumbers.length > 0) {
+          var tmp = [];
+          angular.forEach(this.docNumbers, function (v, k) {
+            tmp.push(v.toString());
+          });
+          searchObj['accountdata.docnumbers'] = {'$in': tmp};
+          valid += 1;
+        }
+        if (this.docName !== "") {
+          searchObj['name'] = {'$regex': '/'+ this.docName +'/'};
+          valid += 1;
+        }
+
+        if (valid === 0) {
+          return undefined;
+        } else {
+          return JSON.stringify(searchObj);
+        }
+      },
+
+    };
+
+  }
+]);
+
+appCtrl.controller('searchResultModalCtrl', ['$scope', '$modalInstance', 'result', 'Docs', 'Globals',
+  function ($scope, $modalInstance, result, Docs, Globals) {
+    $scope.docs = Docs;
+    $scope.globals = Globals;
+    $scope.result = result;
+
+    $scope.cancel = function () {
+      $modalInstance.dismiss('cancel');
+    };
+
+    $scope.use = function () {
+      $scope.docs.saveDocs($scope.result);
+      var doc = $scope.docs.firstDoc();
+      $modalInstance.close();
+      $scope.globals.goToDoc(doc.name)
+    };
+
+    $scope.keyEvents = function (keyEvent) {
+      if (keyEvent.which === 13) {
+        $scope.use();
+      }
+    };
+
+  }
+]);
 
 appCtrl.controller('loginCtrl', ['$scope', '$rootScope', '$http', '$location', '$log', 'User', 
   function($scope, $rootScope, $http, $location, $log, User) {
@@ -25,6 +137,7 @@ appCtrl.controller('loginCtrl', ['$scope', '$rootScope', '$http', '$location', '
             $log.error(data.Msg);
           } else if (data.Status === 'success') {
             $rootScope.loggedInAs = user.Username;
+            $rootScope.user = user
             $location.url('/newDocs');
           }
         })
@@ -41,10 +154,9 @@ appCtrl.controller('newDocsCtrl', ['$scope', '$location', 'Docs', 'Globals',
     $scope.globals = Globals;
     $scope.docs = Docs;
     $scope.docs.find('{"labels": {"$in":  ["Neu"]}}')
-      .then(function (docs) {
-        console.log("find something");
-        docs.saveDocs(docs.searchResult);
-        var doc = docs.firstDoc();
+      .then(function (result) {
+        $scope.docs.saveDocs(result);
+        var doc = $scope.docs.firstDoc();
         $scope.globals.goToDoc(doc.name); 
       });
 
@@ -60,213 +172,234 @@ appCtrl.controller('singleViewCtrl', [
     SearchStr, Docs, Globals, AccProcess) {
   
     var setupCtrl = function () {
-      $rootScope.searchStrDraftAmount = 0;
-
       $scope.globals = Globals;
+
+      if (!angular.isDefined($rootScope.user)) {
+        $scope.globals.goToLogin()
+        return
+      }
+
+      $scope.searchStr = SearchStr;
+      $scope.accProcess = AccProcess;
 
       $scope.currPDFPage = 1;
       $scope.totalPDFPages = '?';
-
-      $scope.searchStr = SearchStr;
-
-      $scope.accProcess = AccProcess;
 
       $scope.docName = $routeParams.docName;
       $scope.docs = Docs;
       $scope.doc = $scope.docs.readDoc($scope.docName);
 
-      // Dev
-      $scope.user = User;
-      $scope.user.get({'name':'a'}, function(user) {
-        $log.debug('User: ', user); 
-      });
-      $scope.docs.find('{"labels": {"$in": ["Neu"]}}')
-        .then(function(docs) {
-          docs.saveDocs(docs.searchResult);
-          $scope.docName = $routeParams.docName;
-          $scope.doc = $scope.docs.readDoc($scope.docName);
-          $rootScope.doc = $scope.doc;
-          $rootScope.docs = $scope.docs;
-          var from = $scope.globals.makeEuroDateFormat($scope.doc.accountdata.docperiod.from);
-          var to = $scope.globals.makeEuroDateFormat($scope.doc.accountdata.docperiod.to);
-          $scope.doc.accountdata.docperiod.fromProxy = from;
-          $scope.doc.accountdata.docperiod.toProxy = to;
-          setupPDF()
-        });
-      // End Dev
+      // Das Datums-Format welches in der Datenbank hinterlegt ist
+      // möchte kein Benutzer lesen damit das konvertieren zwischen
+      // Benutzeransicht und das speichern des Datums in der Datenbank
+      // funtkioniert werden Proxy Felder im doc Objekt anglegt.
+      var g = $scope.globals // Hilft gegen zu lange Zeilen
+      var from = g.makeEuroDateFormat($scope.doc.accountdata.docperiod.from);
+      var to = g.makeEuroDateFormat($scope.doc.accountdata.docperiod.to);
+      $scope.doc.accountdata.docperiod.fromProxy = from;
+      $scope.doc.accountdata.docperiod.toProxy = to;
+
+      $scope.pdf.setup($scope.docName);
       
-      //var g = $scope.globals
-      //var from = g.makeEuroDateFormat($scope.doc.accountdata.docperiod.from);
-      //var to = g.makeEuroDateFormat($scope.doc.accountdata.docperiod.to);
-      //$scope.doc.accountdata.docperiod.fromProxy = from;
-      //$scope.doc.accountdata.docperiod.toProxy = to;
-
-      $scope.modals = {
-        changeDocName: {
-          id: "change-docname",
-          input: "",
-          modal: undefined,
-          save: function () {
-            var that = this;
-            $scope.docs.changeDocName($scope.doc.name, this.input)
-              .then(function (response) {
-                $log.debug('renamed '+ that.input);
-                $scope.doc.name = that.input;
-                that.modal.close(that.input)
-                that.input = undefined;
-                $scope.globals.goToDoc($scope.doc.name);
-              })
-              .catch(function (response) {
-                $scope.globals.globalErrMsg(response.Msg);
-              });
-          },
-          keyEvent: function (keyEvent) {
-            if (keyEvent.which === 13) {
-              this.save();
-            }
-          },
-          open: function () {
-            var that = this;
-
-            this.modal = $modal.open({
-              animation: true,
-              templateUrl: '/public/angular-tpls/changeDocNameModal.html', 
-              scope: $scope,
-            });
-
-            this.modal.opened.then(function () {
-              $log.debug($scope.doc.name);
-              that.input = $scope.doc.name;
-              angular.element('.changeDocName-start').focus(); 
-            });
-
-          },
-          cancel: function () {
-            this.modal.dismiss('cancel');
-          }
-        },
-
-        accProcess: {
-          modal: undefined,
-          open: function () {
-            var that = this;
-            var docNumbers = $scope.doc.accountdata.docnumbers;
-            var accNumber = $scope.doc.accountdata.accnumber;
-            var from = $scope.doc.accountdata.docperiod.from;
-            var to = $scope.doc.accountdata.docperiod.to;
-            $scope.accProcess.findAll(docNumbers, accNumber, from, to)
-              .then(function (accProcess) {
-
-                that.modal = $modal.open({
-                  animation: true,
-                  templateUrl: '/public/angular-tpls/accProcessModal.html',
-                  scope: $scope,
-                  windowClass: 'accProcess-modal'
-                });
+    }
 
 
-              })
-              .catch(function (response) {
-                $scope.globals.globalErrMsg(response.Msg)
-              });
-          },
-          cancel: function () {
-            this.modal.dismiss('cancel');
-          },
-
-        },
-
-      };
-
-      $scope.labels = {
-        input: [],
+    $scope.modals = {
+      changeDocName: {
+        id: "change-docname",
+        input: "",
+        modal: undefined,
         save: function () {
-          var docName = $scope.doc.name;
           var that = this;
-          $scope.docs.appendLabels(docName, this.input)
+          $scope.docs.changeDocName($scope.doc.name, this.input)
             .then(function (response) {
-              $log.debug("Aw:"+ response);
-              that.input = [];
+              $log.debug('renamed '+ that.input);
+              that.modal.close()
+              $scope.doc.name = that.input;
+              $scope.globals.goToDoc(that.input);
             })
             .catch(function (response) {
-              $log.error(response);
               $scope.globals.globalErrMsg(response.Msg);
             });
         },
         keyEvent: function (keyEvent) {
           if (keyEvent.which === 13) {
-            this.save()
+            this.save();
           }
         },
-        remove: function (label) {
-          var docName = $scope.doc.name;
-          $scope.docs.removeLabel(docName, label)
-            .then(function (response) {
-              $log.debug(response);
-            })
-            .catch(function (response) {
-              $log.debug(response);
-              $scope.globals.globalErrMsg(response);
-            });
-        }
-      };
-
-      $scope.docnumbers = {
-        input: [],
-        save: function () {
-          var docName = $scope.doc.name;
+        open: function () {
           var that = this;
-          $scope.docs.appendDocNumbers(docName, this.input)
-            .then(function (response) {
-              $log.debug(response);
-              that.input = [];
-            })
-            .catch(function (response) {
-              $log.error(response);
-              $scope.globals.globalErrMsg(response);
-            });
+
+          this.modal = $modal.open({
+            animation: true,
+            templateUrl: '/public/angular-tpls/changeDocNameModal.html', 
+            scope: $scope,
+          });
+
+          this.modal.opened.then(function () {
+            $log.debug($scope.doc.name);
+            that.input = $scope.doc.name;
+            angular.element('input.changeDocName-start').focus(); 
+          });
+
         },
-        keyEvent: function (keyEvent) {
-          if (keyEvent.which === 13) {
-            this.save()
-          }
-        },
-        remove: function (number) {
-          $scope.docs.removeDocNumber($scope.doc.name, number)
-            .then(function (response) {
-              $log.debug(response);
-            })
-            .catch(function (response) {
-              $log.error(response);
-              $scope.globals.globalErrMsg(response);
-            });
+        cancel: function () {
+          this.modal.dismiss('cancel');
         }
-      };
+      },
 
-      //setupPDF()
-      
-    }
+      accProcess: {
+        modal: undefined,
+        open: function () {
+          var that = this;
+          var docNumbers = $scope.doc.accountdata.docnumbers;
+          var accNumber = $scope.doc.accountdata.accnumber;
+          var from = $scope.doc.accountdata.docperiod.from;
+          var to = $scope.doc.accountdata.docperiod.to;
+          $scope.accProcess.findAll(docNumbers, accNumber, from, to)
+            .then(function (accProcess) {
 
-    var setupPDF = function () {
-      $scope.pdfUrl = '/ReadDocFile/'+ $scope.doc.name;
-      PDFJS.disableWorker = true;
-      pdfDelegate.$getByHandle('pdfFile').load($scope.pdfUrl);
-      /*
-      $timeout(function() {
-        pdfDelegate.$getByHandle('pdfFile').load($scope.pdfUrl);
-        $timeout(function() { 
-          $scope.totalPages = pdfDelegate.$getByHandle('pdfFile').getPageCount();
-        }, 800);
-      }, 400);
+              that.modal = $modal.open({
+                animation: true,
+                templateUrl: '/public/angular-tpls/accProcessModal.html',
+                scope: $scope,
+                windowClass: 'accProcess-modal'
+              });
+
+
+            })
+            .catch(function (response) {
+              $scope.globals.globalErrMsg(response.Msg)
+            });
+        },
+        cancel: function () {
+          $log.debug('cancel accprocess modal');
+          this.modal.dismiss('cancel');
+        },
+
+      },
+
+    };
+
+    $scope.labels = {
+      input: [],
+      save: function () {
+        var docName = $scope.doc.name;
+        var that = this;
+        $scope.docs.appendLabels(docName, this.input)
+          .then(function (response) {
+            $log.debug("Aw:"+ response);
+            that.input = [];
+          })
+          .catch(function (response) {
+            $log.error(response);
+            $scope.globals.globalErrMsg(response.Msg);
+          });
+      },
+      keyEvent: function (keyEvent) {
+        if (keyEvent.which === 13) {
+          this.save()
+        }
+      },
+      remove: function (label) {
+        var docName = $scope.doc.name;
+        $scope.docs.removeLabel(docName, label)
+          .then(function (response) {
+            $log.debug(response);
+          })
+          .catch(function (response) {
+            $log.debug(response);
+            $scope.globals.globalErrMsg(response);
+          });
+      }
+    };
+
+    $scope.docnumbers = {
+      input: [],
+      save: function () {
+        var docName = $scope.doc.name;
+        var that = this;
+        $scope.docs.appendDocNumbers(docName, this.input)
+          .then(function (response) {
+            $log.debug(response);
+            that.input = [];
+          })
+          .catch(function (response) {
+            $log.error(response);
+            $scope.globals.globalErrMsg(response);
+          });
+      },
+      keyEvent: function (keyEvent) {
+        if (keyEvent.which === 13) {
+          this.save()
+        }
+      },
+      remove: function (number) {
+        $scope.docs.removeDocNumber($scope.doc.name, number)
+          .then(function (response) {
+            $log.debug(response);
+          })
+          .catch(function (response) {
+            $log.error(response);
+            $scope.globals.globalErrMsg(response);
+          });
+      }
+    };
+    
+
+    $scope.pdf = {
+      url: '',
+      totalPages: '?',
+      currPage: 1,
+
+      zoomIn: function() {
+        this.handler().zoomIn();
+      },
+
+      zoomOut: function() {
+        this.handler().zoomOut();
+      },
+
+      nextPage: function() {
+        var pdfDoc = this.handler()
+        pdfDoc.next();
+        this.currPage = pdfDoc.getCurrentPage();
+        this.totalPages = pdfDoc.getPageCount();
+      },
+
+      prevPage: function() {
+        var pdfDoc = this.handler()
+        pdfDoc.prev();
+        this.currPage = pdfDoc.getCurrentPage();
+        this.totalPages = pdfDoc.getPageCount();
+      },
+
+      handler: function () {
+        return pdfDelegate.$getByHandle('pdfFile')
+      },
+
+      setup: function (docName) {
+        var that = this;
+        this.url = '/ReadDocFile/'+ docName;
+        PDFJS.disableWorker = true;
+        this.handler().load(this.url);
+        this.currPage = 1;
+
+        var timer = $timeout(function() { 
+          that.totalPages = that.handler().getPageCount();
+        }, 1000);
+
+        $scope.$on('destroy', function () {
+          $timeout.cancel(timer);
+        });
+
       /*
       PDFJS.disableWorker = true;
       $http.get($scope.pdfUrl)
         .success(function (data) {
           for(var x=0;x<11;x++) {
-            //console.log(data[x]);
           }
           var pdf = PDFJS.getDocument({data: data}).then(function (pdf) {;
-            console.log(pdf);
             pdf.getPage(1).then(function(page) {
               var scale = 1;
               var viewport = page.getViewport(scale);
@@ -289,97 +422,18 @@ appCtrl.controller('singleViewCtrl', [
 
         });
         */
-    }
-
-    var backToSearchInput = function () {
-      $rootScope.searchStrDraftAmount = $scope.searchStr.amountDraft();
-      $rootScope.searchStrDrafts = $scope.searchStr.readDraft();
-
-      angular.element('#search-input').val('');
-      angular.element('#search-input').focus();
-      console.log($scope.searchStr.readDraft());
-    }
-
-
-    var readSearchInput = function () {
-      return $scope.searchInput;
-    }
-
-    var readPdfHandler = function () {
-      return pdfDelegate.$getByHandle('pdfFile')
-    }
-
-    /*
-    $rootScope.searchKeyEvents = function (keyEvent) {
-      if (keyEvent.which === 13) {
-        var input = $scope.searchInput;
-        if (tagCtrls.contains(input)) {
-          var tagCtrl = tagCtrls.getCtrl(input);
-          tagCtrl.openModal();
-        } else if (input.indexOf(":")+1 === input.length) {
-          var tagCtrl = tagCtrls.getCtrl('ValueTag');
-          tagCtrl.openModal();
-        } else {
-          $scope.searchStr.append(readSearchInput(), {});
-          backToSearchInput();
-        }
       }
-    };
 
-    $rootScope.removeDraftStr = function (tagName) {
-      $scope.searchStr.removeDraft(tagName);
-      backToSearchInput();
-    }
 
-    $rootScope.openSearchStrDraft = function () {
-      angular.element('#searchstr-draft').show();
-    }
-
-    $rootScope.closeSearchStrDraft = function () {
-      angular.element('#searchstr-draft').hide();
-    }
-
-    $rootScope.findFiles = function () {
-      console.log($scope.searchStr.make());
-    }
-
-    $rootScope.clearSearchStrDraft = function () {
-      $scope.searchStr.clearDraft();
-      $rootScope.searchStrDraftAmount = $scope.searchStr.amountDraft();
-    }
-
-    */
-    
-
-    $scope.nextPage = function() {
-      var pdfDoc = readPdfHandler()
-      pdfDoc.next();
-      $scope.currentPage = pdfDoc.getCurrentPage();
-      $scope.totalPages = pdfDoc.getPageCount();
-    }
-
-    $scope.prevPage = function() {
-      var pdfDoc = readPdfHandler()
-      pdfDoc.prev();
-      $scope.currentPage = pdfDoc.getCurrentPage();
-      $scope.totalPages = pdfDoc.getPageCount();
-    }
-
-    $scope.zoomIn = function() {
-      readPdfHandler().zoomIn();
-    }
-
-    $scope.zoomOut = function() {
-      readPdfHandler().zoomOut();
     }
 
     $scope.nextDoc = function () {
-      var nextDoc = $scope.docs.nextDoc()
+      var nextDoc = $scope.docs.nextDoc();
       $scope.globals.goToDoc(nextDoc.name);
     }
 
     $scope.prevDoc = function () {
-      var prevDoc = $scope.docs.prevDoc()
+      var prevDoc = $scope.docs.prevDoc();
       $scope.globals.goToDoc(prevDoc.name);
     }
 
@@ -398,7 +452,7 @@ appCtrl.controller('singleViewCtrl', [
       }
       $scope.docs.saveAccData(docName, accData)
         .then(function (response) {
-          $log.debug("successfully saved accountd data");
+          $log.debug('successfully saved accountd data');
           $scope.doc.accountdata.accnumber = accNumber;
           $scope.doc.accountdata.docperiod.from = from;
           $scope.doc.accountdata.docperiod.to = to;
@@ -417,7 +471,7 @@ appCtrl.controller('singleViewCtrl', [
       var docName = $scope.doc.name;
       $scope.docs.saveNote(docName, $scope.doc.note)
         .then(function (response) {
-          $log.debug("Save succesfully");
+          $log.debug('Save succesfully');
           $scope.noteGlowGreen = true;
           $timeout(function () {
             $scope.noteGlowGreen = false;
@@ -427,10 +481,6 @@ appCtrl.controller('singleViewCtrl', [
           $log.error(response);
           $scope.globals.globalErrMsg(response);
         });
-    }
-
-    $scope.shortcuts = function (keyEvent) {
-      console.log(keyEvent)
     }
 
     // Run on start

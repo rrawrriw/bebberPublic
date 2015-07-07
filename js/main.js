@@ -12,12 +12,12 @@ var app = angular.module('bebber', [
 app.config(['$routeProvider',
   function($routeProvider) {
     $routeProvider.
-      when('/docs/:docName', {
+      when('/searchResult/:docName', {
         templateUrl: '/public/angular-tpls/singleView.html',
         controller: 'singleViewCtrl'
       }).when('/newDocs', {
-        templateUrl: '/public/angular-tpls/singleView.html',
-        controller: 'newDocsCtrl'
+        templateUrl: '/public/angular-tpls/searchView.html',
+        controller: 'newDocsCtrl',
       }).when('/login', {
         templateUrl: '/public/angular-tpls/login.html',
         controller: 'loginCtrl'

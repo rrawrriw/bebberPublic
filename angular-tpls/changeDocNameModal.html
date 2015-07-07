@@ -1,13 +1,17 @@
 <div class="modal-header">
-  <button type="button" class="close"><span ng-click="modals.changeDocName.cancel()">&times;</span></button>
+  <button type="button" class="close" ng-click="modals.changeDocName.cancel()"><span >&times;</span></button>
   <h4 class="modal-title" id="myModalLabel">Umbenennen</h4>
 </div>
 <div class="modal-body">
   <div class="input-group">
-    <input type="text" class="changeDocName-start form-control"
+    <input type="text" class="changeDocName-start form-control" tabindex="0"
            ng-model="modals.changeDocName.input" ng-keypress="modals.changeDocName.keyEvent($event)">
     <span class="input-group-btn">
       <button class="btn btn-default" type="button" ng-click="modals.changeDocName.save()">OK!</button>
     </span>
   </div>
 </div>
+<div class="modal-footer">
+  <button class="btn btn-primary" ng-click="modals.changeDocName.cancel()">Cancel</button>
+</div>
+
