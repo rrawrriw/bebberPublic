@@ -1,0 +1,25 @@
+{
+  "version": "0.0.0",
+  "private": true,
+  "name": "bebberPublic",
+  "description": "Frontend for bebber",
+  "repository": "https://github.com/rrawrriw/bebberPublic",
+  "license": "MIT",
+  "devDependencies": {
+    "karma": "^0.13.0",
+    "karma-chrome-launcher": "^0.2.0",
+    "karma-jasmine": "^0.3.6",
+    "protractor": "~2.1.0"
+  },
+  "scripts": {
+    "pretest": "npm install",
+    "test": "node node_modules/karma/bin/karma start test/karma.conf.js",
+    "test-single-run": "node node_modules/karma/bin/karma start test/karma.conf.js  --single-run",
+
+    "preupdate-webdriver": "npm install",
+    "update-webdriver": "webdriver-manager update",
+
+    "preprotractor": "npm run update-webdriver",
+    "protractor": "node_modules/protractor/bin/protractor test/protractor-conf.js"
+  }
+}
