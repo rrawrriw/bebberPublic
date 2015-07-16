@@ -270,7 +270,7 @@ appServices.factory('Docs', ['$log', '$http', '$q',
 
       saveNote: function (name, note) {
         var that = this;
-        var request = {"Name": name, "Note": note}
+        var request = {'Name': name, 'Note': note}
         var deferred = $q.defer();
 
         $http.patch('/Doc', JSON.stringify(request))
@@ -317,6 +317,37 @@ appServices.factory('Docs', ['$log', '$http', '$q',
 
         return deferred.promise;
 
+      },
+
+      _changeDateOfReceiptFromCurrDocs: function (name, newDate) {
+        this._currDocs[name].infos.dateofreceipt = newDate;
+      },
+
+      changeDateOfReceipt: function (name, newDate) {
+        var that = this;
+        var deferred = $q.defer();
+        var url = '/Doc';
+        var request = {
+          Name: name,
+          Infos: {
+            DateOfReceipt: newDate,
+          },
+        };
+
+        $http.patch(url, JSON.stringify(request))
+          .success(function (response) {
+            if (response.Status === 'success') {
+              that._changeDateOfReceiptFromCurrDocs(name, newDate);
+              deferred.resolve(response);
+            } else if (response.Status === 'fail') {
+              deferred.reject(response);
+            }
+          })
+          .error(function (response) {
+            deferred.reject(response);
+          });
+
+        return deferred.promise;
       },
 
       saveAccData: function (name, accData) {

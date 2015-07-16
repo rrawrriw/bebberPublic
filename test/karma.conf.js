@@ -4,11 +4,13 @@ module.exports = function(config){
     basePath : '../',
 
     files : [
-      'app/bower_components/angular/angular.js',
-      'app/bower_components/angular-route/angular-route.js',
-      'app/bower_components/angular-resource/angular-resource.js',
-      'app/bower_components/angular-mocks/angular-mocks.js',
-      'app/js/**/*.js',
+      'ext/angular/angular.js',
+      'ext/angular-mocks/angular-mocks.js',
+      'ext/angular-route/angular-route.js',
+      'ext/angular-resource/angular-resource.js',
+      'ext/angular-ui/ui-bootstrap-tpls-0.13.0.min.js',
+      'ext/angular-pdf-viewer/angular-pdf-viewer.min.js',
+      'js/*.js',
       'test/unit/**/*.js'
     ],
 
@@ -20,7 +22,7 @@ module.exports = function(config){
 
     plugins : [
             'karma-chrome-launcher',
-            'karma-firefox-launcher',
+            //'karma-firefox-launcher',
             'karma-jasmine'
             ],
 
