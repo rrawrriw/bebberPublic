@@ -5,6 +5,13 @@ var appDirectives = angular.module('appDirectives', []);
 appDirectives.directive('shortcuts', ['$window', 'Globals', 'Docs', 
   function ($window, Globals, Docs) {
 
+    var removeNewLabel = function (docName, docs, gloabls) {
+      docs.removeLabel(docName, 'Neu')
+        .catch(function (response) {
+          globals.globalErrMsg(response.Msg);
+        });
+    }
+
     return {
       link: function (scope, element, attr) {
 
@@ -38,18 +45,21 @@ appDirectives.directive('shortcuts', ['$window', 'Globals', 'Docs',
                 .catch(function (response) {
                   g.globalErrMsg(response.Msg);
                 });
+              removeNewLabel(docName, docs, g);
               break;
             case 66:
               docs.appendLabels(docName, ['Inbox-Bruno'])
                 .catch(function (response) {
                   g.globalErrMsg(response.Msg);
                 });
+              removeNewLabel(docName, docs, g);
               break;
             case 77:
               docs.appendLabels(docName, ['Inbox-Martin'])
                 .catch(function (response) {
                   g.globalErrMsg(response.Msg);
                 });
+              removeNewLabel(docName, docs, g);
               break;
             case 82:
               docs.removeLabel(docName, 'Neu')
