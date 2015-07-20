@@ -1,7 +1,7 @@
 {
   "version": "0.0.0",
   "private": true,
-  "name": "bebberPublic",
+  "name": "bebber-public",
   "description": "Frontend for bebber",
   "repository": "https://github.com/rrawrriw/bebberPublic",
   "license": "MIT",
