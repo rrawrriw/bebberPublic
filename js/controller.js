@@ -189,16 +189,6 @@ appCtrl.controller('singleViewCtrl', [
       $scope.docs = Docs;
       $scope.doc = $scope.docs.readDoc($scope.docName);
 
-      // Das Datums-Format welches in der Datenbank hinterlegt ist
-      // möchte kein Benutzer lesen damit das konvertieren zwischen
-      // Benutzeransicht und das speichern des Datums in der Datenbank
-      // funtkioniert werden Proxy Felder im doc Objekt anglegt.
-      var g = $scope.globals // Hilft gegen zu lange Zeilen
-      var from = g.makeEuroDateFormat($scope.doc.accountdata.docperiod.from);
-      var to = g.makeEuroDateFormat($scope.doc.accountdata.docperiod.to);
-      $scope.doc.accountdata.docperiod.fromProxy = from;
-      $scope.doc.accountdata.docperiod.toProxy = to;
-
       $scope.pdf.setup($scope.docName);
       
     }
@@ -441,8 +431,8 @@ appCtrl.controller('singleViewCtrl', [
       var g = $scope.globals
       var docName = $scope.doc.name;
       var accNumber = parseInt($scope.doc.accountdata.accnumber);
-      var from = g.makeMongoDBDate($scope.doc.accountdata.docperiod.fromProxy)
-      var to = g.makeMongoDBDate($scope.doc.accountdata.docperiod.toProxy)
+      var from = $scope.doc.accountdata.docperiod.from;
+      var to = $scope.doc.accountdata.docperiod.to;
       var accData = {
         accNumber: accNumber,
         docPeriod: {

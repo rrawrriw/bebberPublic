@@ -41,7 +41,7 @@
       <table class="table">
         <tbody>
           <tr>
-          <td>Eingangsdatum</td><td><input id="date-of-receipt-input" ng-model="doc.infos.dateofreceipt" value="{{doc.infos.dateofreceipt|euroDate}}"></td>
+          <td>Eingangsdatum</td><td><input id="date-of-receipt-input" ng-model="doc.infos.dateofreceipt" date-proxy></td>
           </tr>
           <tr>
             <td>Scandatum</td><td>{{doc.infos.dateofscan|euroDate}}</td>
@@ -75,14 +75,16 @@
           <div class="input-group period-date">
             <label for="from-date">Von:</label>
             <input type="text" id="from-date"
-                   ng-model="doc.accountdata.docperiod.fromProxy"
-                   ng-class="{'glow-green': accDataGlowGreen}">
+                   ng-model="doc.accountdata.docperiod.from"
+                   ng-class="{'glow-green': accDataGlowGreen}"
+                   date-proxy>
           </div>
           <div class="input-group period-date">
             <label for="to-date">Bis:</label>
             <input type="text" id="to-date"
-                   ng-model="doc.accountdata.docperiod.toProxy"
-                   ng-class="{'glow-green': accDataGlowGreen}">
+                   ng-model="doc.accountdata.docperiod.to"
+                   ng-class="{'glow-green': accDataGlowGreen}"
+                   date-proxy>
           </div>
         </div>
         <div id="accdata-ctrls">
