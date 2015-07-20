@@ -417,6 +417,11 @@ appCtrl.controller('singleViewCtrl', [
 
     }
 
+    $scope.glowGreen = {
+      accData: false,
+      dateOfReceipt: false,
+    }
+
     $scope.nextDoc = function () {
       var nextDoc = $scope.docs.nextDoc();
       $scope.globals.goToDoc(nextDoc.name);
@@ -425,6 +430,22 @@ appCtrl.controller('singleViewCtrl', [
     $scope.prevDoc = function () {
       var prevDoc = $scope.docs.prevDoc();
       $scope.globals.goToDoc(prevDoc.name);
+    }
+
+    $scope.saveDateOfReceipt = function() {
+      var date = $scope.doc.infos.dateofreceipt;
+      $scope.docs.changeDateOfReceipt($scope.doc.name, date)
+        .then(function (response) {
+          $scope.glowGreen.dateOfReceipt = true;
+          $timeout(function () {
+            $scope.glowGreen.dateOfReceipt = false;
+          }, 2000);
+        })
+        .catch(function (response) {
+          $log.error(response);
+          $scope.globals.globalErrMsg(response.Msg);
+        });
+
     }
 
     $scope.saveAccData = function () {
@@ -443,12 +464,9 @@ appCtrl.controller('singleViewCtrl', [
       $scope.docs.saveAccData(docName, accData)
         .then(function (response) {
           $log.debug('successfully saved accountd data');
-          $scope.doc.accountdata.accnumber = accNumber;
-          $scope.doc.accountdata.docperiod.from = from;
-          $scope.doc.accountdata.docperiod.to = to;
-          $scope.accDataGlowGreen = true;
+          $scope.glowGreen.accData = true;
           $timeout(function () {
-            $scope.accDataGlowGreen = false;
+            $scope.glowGreen.accData = false;
           }, 2000);
         })
         .catch(function (response) {
