@@ -41,7 +41,7 @@
       <table class="table">
         <tbody>
           <tr>
-            <td>Eingangsdatum</td><td>{{doc.infos.dateofreceipt|euroDate}}</td>
+          <td>Eingangsdatum</td><td><input id="date-of-receipt-input" ng-model="doc.infos.dateofreceipt" value="{{doc.infos.dateofreceipt|euroDate}}"></td>
           </tr>
           <tr>
             <td>Scandatum</td><td>{{doc.infos.dateofscan|euroDate}}</td>
