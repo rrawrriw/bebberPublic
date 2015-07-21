@@ -136,6 +136,38 @@ appCtrl.controller('docNumberProposalModalCtrl', ['$scope', '$modalInstance', 'D
   }
 ]);
 
+appCtrl.controller('changeDocNameModalCtrl', ['$scope', '$modalInstance', 'Doc', 'Docs', 'Globals',
+  function ($scope, $modalInstance, Doc, Docs, Globals) {
+
+    $scope.doc = Doc;
+    $scope.newDocName = $scope.doc.name;
+    $scope.globals = Globals;
+    $scope.docs = Docs;
+    $scope.opened = true;
+
+    $scope.cancel = function () {
+      $modalInstance.dismiss('cancel');
+    };
+
+    $scope.save = function () {
+      $scope.docs.changeDocName($scope.doc.name, $scope.newDocName)
+        .then(function (response) {
+          console.log('renamed '+ $scope.newDocName);
+          $modalInstance.close($scope.newDocName);
+        })
+        .catch(function (response) {
+          $scope.globals.globalErrMsg(response.Msg);
+        });
+    };
+
+    $scope.keyEvents = function (keyEvent) {
+      if (keyEvent.which === 13) {
+        $scope.save();
+      }
+    };
+
+  }
+]);
 
 appCtrl.controller('searchResultModalCtrl', ['$scope', '$modalInstance', 'result', 'Docs', 'Globals',
   function ($scope, $modalInstance, result, Docs, Globals) {
@@ -233,49 +265,27 @@ appCtrl.controller('singleViewCtrl', [
 
     }
 
-
     $scope.modals = {
       changeDocName: {
-        id: "change-docname",
-        input: "",
         modal: undefined,
-        save: function () {
-          var that = this;
-          $scope.docs.changeDocName($scope.doc.name, this.input)
-            .then(function (response) {
-              $log.debug('renamed '+ that.input);
-              that.modal.close()
-              $scope.doc.name = that.input;
-              $scope.globals.goToDoc(that.input);
-            })
-            .catch(function (response) {
-              $scope.globals.globalErrMsg(response.Msg);
-            });
-        },
-        keyEvent: function (keyEvent) {
-          if (keyEvent.which === 13) {
-            this.save();
-          }
-        },
         open: function () {
           var that = this;
 
           this.modal = $modal.open({
             animation: true,
             templateUrl: '/public/angular-tpls/changeDocNameModal.html', 
-            scope: $scope,
+            controller: 'changeDocNameModalCtrl',
+            resolve: {
+              Doc: function () {return $scope.doc},
+            },
           });
 
-          this.modal.opened.then(function () {
-            $log.debug($scope.doc.name);
-            that.input = $scope.doc.name;
-            angular.element('input.changeDocName-start').focus(); 
+          this.modal.result.then(function (newName) {
+            $scope.doc.name = newName;
+            $scope.globals.goToDoc(newName);
           });
 
         },
-        cancel: function () {
-          this.modal.dismiss('cancel');
-        }
       },
 
       accProcess: {
@@ -303,7 +313,6 @@ appCtrl.controller('singleViewCtrl', [
             });
         },
         cancel: function () {
-          $log.debug('cancel accprocess modal');
           this.modal.dismiss('cancel');
         },
 
@@ -552,7 +561,6 @@ appCtrl.controller('singleViewCtrl', [
       var docName = $scope.doc.name;
       $scope.docs.saveNote(docName, $scope.doc.note)
         .then(function (response) {
-          $log.debug('Save succesfully');
           $scope.noteGlowGreen = true;
           $timeout(function () {
             $scope.noteGlowGreen = false;
