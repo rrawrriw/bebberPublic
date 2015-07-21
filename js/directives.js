@@ -103,3 +103,15 @@ appDirectives.directive('shortcuts', ['$window',
 
   }
 ]);
+
+appDirectives.directive('focusMe', ['$parse',
+  function ($parse) {
+    console.log('in focusme');
+    return {
+      link: function (scope, element, attr, ctrl) {
+        var modal = $parse(attr.focusMe);
+        console.log(modal);
+      },
+    }
+  }
+]);
