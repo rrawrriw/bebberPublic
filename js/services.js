@@ -502,4 +502,53 @@ appServices.factory('AccProcess', ['$http', '$q',
 
     }
   }
-])
+]);
+
+appServices.factory('DocNumberProposal', ['$http', '$q',
+  function ($http, $q) {
+    return {
+      sendRequest: function (method, url, data) {
+        var deferred = $q.defer();
+        var request = {
+          method: method,
+          url: url,
+          data: data,
+        };
+        $http(request)
+          .success(function (response) {
+            if (response.Status === 'success') {
+              deferred.resolve(response);
+            } else {
+              deferred.reject(response);
+            }
+          })
+          .error(function () {
+            deferred.reject(response);
+          });
+
+        return deferred.promise;
+      },
+      save: function (newProposal) {
+        return this.sendRequest(
+          'PUT',
+          '/DocNumberProposal',
+          {Proposal: newProposal}
+        );
+      },
+      curr: function () {
+        return this.sendRequest(
+          'GET',
+          '/DocNumberProposal',
+          {}
+        );
+      },
+      next: function () {
+        return this.sendRequest(
+          'GET',
+          '/DocNumberProposal/Next',
+          {}
+        );
+      },
+    }
+  }
+]);

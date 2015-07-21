@@ -67,4 +67,67 @@ describe('Services', function() {
     });
 
   });
+
+  describe('DocNumberProposal', function () {
+    var $rootScope,
+      $scope,
+      $httpBackend,
+      DocNumberProposal;
+
+    beforeEach(inject(function ($injector) {
+      $rootScope = $injector.get('$rootScope');
+      $scope = $rootScope.$new();
+      $httpBackend = $injector.get('$httpBackend');
+      DocNumberProposal = $injector.get('DocNumberProposal');
+      $scope.docNumberProposal = DocNumberProposal;
+
+      $httpBackend
+        .when('GET', '/DocNumberProposal/Next')
+        .respond({Status: 'success', Proposal: 1234});
+      $httpBackend
+        .when('GET', '/DocNumberProposal')
+        .respond({Status: 'success', Proposal: 1235});
+      $httpBackend
+        .when('PUT', '/DocNumberProposal')
+        .respond({Status: 'success'});
+
+    }));
+
+    it('should possible to save doc number proposal', function (done) {
+      $httpBackend.expect('PUT', '/DocNumberProposal');
+      $scope.docNumberProposal.save('1235')
+        .catch(function (response) {
+          expect(response).toEqual({Status: 'success'});
+        });
+      $httpBackend.flush();
+      done();
+    });
+
+    it('should possible to get the next doc number proposal', function (done) {
+      $httpBackend.expect('GET', '/DocNumberProposal/Next');
+      $scope.docNumberProposal.next()
+        .then(function (response) {
+          expect(response.Proposal).toEqual(1234);
+        })
+        .catch(function (response) {
+          expect(respone).toEqual({Status: 'success'});
+        });
+      $httpBackend.flush();
+      done();
+    });
+
+    it('should possible to get the current doc number proposal', function (done) {
+      $httpBackend.expect('GET', '/DocNumberProposal');
+      $scope.docNumberProposal.curr()
+        .then(function (response) {
+          expect(response.Proposal).toEqual(1235);
+        })
+        .catch(function (response) {
+          expect(respone).toEqual({Status: 'success'});
+        });
+      $httpBackend.flush();
+      done();
+    });
+
+  });
 });
