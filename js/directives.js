@@ -104,13 +104,18 @@ appDirectives.directive('shortcuts', ['$window',
   }
 ]);
 
-appDirectives.directive('focusMe', ['$parse',
-  function ($parse) {
-    console.log('in focusme');
+appDirectives.directive('focusMe', ['$parse', '$timeout',
+  function ($parse, $timeout) {
     return {
+      scope: {trigger: '@focusMe'},
       link: function (scope, element, attr, ctrl) {
-        var modal = $parse(attr.focusMe);
-        console.log(modal);
+        scope.$watch('trigger', function(value) {
+          if(value === 'true') { 
+            $timeout(function() {
+              element[0].focus(); 
+            });
+          }
+        })
       },
     }
   }

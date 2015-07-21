@@ -35,30 +35,27 @@ describe('directives', function() {
   });
 
   describe('focusMe', function () {
-    var $modal;
+    var $modal,
+      $timeout;
 
     beforeEach(inject(function($injector) {
       $modal = $injector.get('$modal');
+      $timeout = $injector.get('$timeout');
     }));
 
     it('should set the focus when the modal is opened', function () {
-      var html = '\
-        <script type="text/ng-template" id="testModal"> \
-          <input id="testInput" focus-me> \
-        </script> \
-      '
+      var html = '<input id="testInput" focus-me="{{opened}}">'
+
       var elem = $compile(html)($scope);
+      spyOn(elem[0], 'focus');
       $rootScope.$digest();
 
-      var modal = $modal.open({
-        templateUrl: 'testModal',
-        scope: $scope,
-      });
+      $scope.opened = true
 
-      modal.opened.then(function () {
-        console.log(elem.find('input:focus'));
-      })
+      $rootScope.$digest();
+      $timeout.flush(0);
 
+      expect(elem[0].focus).toHaveBeenCalled();
     });
 
   });
