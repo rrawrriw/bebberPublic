@@ -4,8 +4,10 @@
 </div>
 <div class="modal-body">
   <div class="input-group">
-    <input type="text" class="docNumberProposal-start form-control" tabindex="0"
-           ng-model="proposal" ng-keypress="keyEvents($event)">
+    <input type="text" class="form-control" tabindex="0"
+           ng-model="proposal"
+           ng-keypress="keyEvents($event)"
+           focus-me="{{opened}}">
     <span class="input-group-btn">
       <button class="btn btn-default" type="button" ng-click="save()">OK!</button>
     </span>

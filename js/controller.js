@@ -106,6 +106,7 @@ appCtrl.controller('docNumberProposalModalCtrl', ['$scope', '$modalInstance', 'D
       $scope.docNumberProposal.next()
         .then(function (response) {
           $scope.proposal = response.Proposal;
+          $scope.opened = true;
         })
         .catch(function (response) {
           $scope.globals.globalErrMsg(response.Msg);
