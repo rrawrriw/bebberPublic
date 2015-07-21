@@ -99,6 +99,43 @@ appCtrl.controller('initCtrl', [
   }
 ]);
 
+appCtrl.controller('docNumberProposalModalCtrl', ['$scope', '$modalInstance', 'DocNumberProposal', 'Globals',
+  function ($scope, $modalInstance, DocNumberProposal, Globals) {
+
+    var startCtrl = function () {
+      $scope.docNumberProposal.next()
+        .then(function (response) {
+          $scope.proposal = response.Proposal;
+        })
+        .catch(function (response) {
+          $scope.globals.globalErrMsg(response.Msg);
+        });
+    }
+
+    $scope.proposal = undefined;
+    $scope.globals = Globals;
+    $scope.docNumberProposal = DocNumberProposal;
+
+    $scope.cancel = function () {
+      $modalInstance.dismiss('cancel');
+    };
+
+    $scope.save = function () {
+      $modalInstance.close($scope.proposal);
+    };
+
+    $scope.keyEvents = function (keyEvent) {
+      if (keyEvent.which === 13) {
+        $scope.save();
+      }
+    };
+
+    startCtrl();
+
+  }
+]);
+
+
 appCtrl.controller('searchResultModalCtrl', ['$scope', '$modalInstance', 'result', 'Docs', 'Globals',
   function ($scope, $modalInstance, result, Docs, Globals) {
     $scope.docs = Docs;
@@ -166,10 +203,10 @@ appCtrl.controller('newDocsCtrl', ['$scope', '$location', 'Docs', 'Globals',
 appCtrl.controller('singleViewCtrl', [
   '$scope', '$rootScope', '$http', '$log', '$routeParams', '$location', '$q',
   '$timeout', '$document', '$modal', 'pdfDelegate', 'User',
-  'SearchStr', 'Docs', 'Globals', 'AccProcess',
+  'SearchStr', 'Docs', 'Globals', 'AccProcess', 'DocNumberProposal',
   function ($scope, $rootScope, $http, $log, $routeParams, 
     $location, $q, $timeout, $document, $modal, pdfDelegate, User,
-    SearchStr, Docs, Globals, AccProcess) {
+    SearchStr, Docs, Globals, AccProcess, DocNumberProposal) {
   
     var setupCtrl = function () {
       $scope.globals = Globals;
@@ -178,6 +215,8 @@ appCtrl.controller('singleViewCtrl', [
         $scope.globals.goToLogin()
         return
       }
+
+      $scope.docNumberProposal = DocNumberProposal;
 
       $scope.searchStr = SearchStr;
       $scope.accProcess = AccProcess;
@@ -190,7 +229,7 @@ appCtrl.controller('singleViewCtrl', [
       $scope.doc = $scope.docs.readDoc($scope.docName);
 
       $scope.pdf.setup($scope.docName);
-      
+
     }
 
 
@@ -267,6 +306,39 @@ appCtrl.controller('singleViewCtrl', [
           this.modal.dismiss('cancel');
         },
 
+      },
+
+      docNumberProposal: {
+        modal: undefined,
+        open: function () {
+          
+          this.modal = $modal.open({
+            animation: true,
+            templateUrl: '/public/angular-tpls/docNumberProposalModal.html',
+            controller: 'docNumberProposalModalCtrl',
+          });
+
+          this.modal.result.then(function (proposal) {
+            var proposalStr = String(proposal);
+            var proposalInt = parseInt(proposal);
+            $scope.docs.appendDocNumbers($scope.doc.name, [proposalStr])
+              .then(function (response) {
+                $scope.docNumberProposal.save(proposalInt)
+                  .catch(function (response) {
+                    $scope.docs.removeDocNumber($scope.doc.name, proposalStr)
+                      .catch(function (response) {
+                        $scope.globals.globalErrMsg(response.Msg);
+                      });
+                    $scope.globals.globalErrMsg(response.Msg);
+                  });
+              })
+              .catch(function (response) {
+                $scope.globals.globalErrMsg(response.Msg);
+              });
+
+          });
+
+        },
       },
 
     };

@@ -24,8 +24,8 @@ appDirectives.directive('dateProxy', ['Globals',
   }
 ]);
 
-appDirectives.directive('shortcuts', ['$window', 'Globals', 'Docs', 
-  function ($window, Globals, Docs) {
+appDirectives.directive('shortcuts', ['$window',
+  function ($window) {
 
     var removeNewLabel = function (docName, docs, gloabls) {
       docs.removeLabel(docName, 'Neu')
@@ -36,9 +36,6 @@ appDirectives.directive('shortcuts', ['$window', 'Globals', 'Docs',
 
     return {
       link: function (scope, element, attr) {
-
-        scope.docs = Docs;
-        scope.globals = Globals;
 
         var docName = scope.doc.name;
         var docs = scope.docs;
@@ -82,6 +79,9 @@ appDirectives.directive('shortcuts', ['$window', 'Globals', 'Docs',
                   g.globalErrMsg(response.Msg);
                 });
               removeNewLabel(docName, docs, g);
+              break;
+            case 81:
+              scope.modals.docNumberProposal.open();
               break;
             case 82:
               docs.removeLabel(docName, 'Neu')

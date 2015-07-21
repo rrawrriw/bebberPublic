@@ -1,0 +1,17 @@
+<div class="modal-header">
+  <button type="button" class="close" ng-click="cancel()"><span >&times;</span></button>
+  <h4 class="modal-title" id="myModalLabel">Hinzufügen der Belegnummer</h4>
+</div>
+<div class="modal-body">
+  <div class="input-group">
+    <input type="text" class="docNumberProposal-start form-control" tabindex="0"
+           ng-model="proposal" ng-keypress="keyEvents($event)">
+    <span class="input-group-btn">
+      <button class="btn btn-default" type="button" ng-click="save()">OK!</button>
+    </span>
+  </div>
+</div>
+<div class="modal-footer">
+  <button class="btn btn-primary" ng-click="cancel()">Cancel</button>
+</div>
+
