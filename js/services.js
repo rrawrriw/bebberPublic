@@ -85,7 +85,6 @@ appServices.factory('Docs', ['$log', '$http', '$q',
       _currDocs: {},
       _sortedDocNames: [],
       _index: 0,
-      searchResult: [],
 
       find: function (searchStrJSON) {
         var that = this;
