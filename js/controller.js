@@ -31,6 +31,7 @@ appCtrl.controller('initCtrl', [
         
         $scope.docs.find(request)
           .then(function (result) {
+            that.result = result;
             var modal = $modal.open({
               animation: true,
               templateUrl: '/public/angular-tpls/searchResultModal.html',
@@ -48,6 +49,24 @@ appCtrl.controller('initCtrl', [
             $scope.globals.globalErrMsg(response.Msg);
           });
 
+      },
+
+      openSearchResult: function () {
+        var modal = $modal.open({
+          animation: true,
+          templateUrl: '/public/angular-tpls/searchResultModal.html',
+          controller: 'searchResultModalCtrl',
+          size: 'lg',
+          resolve: {
+            'result': function () { return $scope.docs.readCurrDocs() },
+          },
+        });
+
+      },
+
+      searchResultLength: function () {
+        console.log('jjj');
+        return $scope.docs.readCurrDocs().length;
       },
 
       toggle: function () {

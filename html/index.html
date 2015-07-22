@@ -45,7 +45,11 @@
                 <div class="dropdown">
                   <button class="btn btn-default" type="button" ng-click="searchForm.toggle()">
                     Suchformular
+                    <span class="glyphicon glyphicon-search"></span>
+                  </button>
+                  <button class="btn btn-default" ng-click="searchForm.openSearchResult()">
                     <span class="glyphicon glyphicon-list-alt"></span>
+                    <span class="badge">{{searchForm.searchResultLength()}}</span>
                   </button>
                   <div id="searchform" collapse="searchForm.opened">
                     <ul class="list-group">
