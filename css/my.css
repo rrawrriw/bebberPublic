@@ -180,6 +180,15 @@ span.tag {
   margin-top: 2px;
 }
 
+#searchform h3 {
+  margin-top: 5px;
+  font-size: 14px;
+}
+
+#searchform #search-from-dateofscan {
+  margin-bottom: 3px;
+}
+
 #searchResultList {
   overflow-y: scroll;
   height: 400px;

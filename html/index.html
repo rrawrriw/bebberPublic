@@ -49,7 +49,7 @@
                   </button>
                   <button class="btn btn-default" ng-click="searchForm.openSearchResult()">
                     <span class="glyphicon glyphicon-list-alt"></span>
-                    <span class="badge">{{searchForm.searchResultLength()}}</span>
+                    <span class="badge">{{searchResultLength}}</span>
                   </button>
                   <div id="searchform" collapse="searchForm.opened">
                     <ul class="list-group">
@@ -68,10 +68,32 @@
                         </div>
                       </li>
                       <li class="list-group-item">
-                        <div class="input-group">
-                          <span class="input-group-addon" id="sizing-addon1">Dateiname:</span>
-                          <input type="text" class="form-control" placeholder="Dateiname"
-                                 ng-model="searchForm.docName" ng-keypress="searchForm.keyEvents($event)">
+                        <h3>Scandatum:</h3>
+                        <div id="search-from-dateofscan" class="input-group">
+                          <input type="text" class="form-control" placeholder="Von"
+                                 ng-model="searchForm.fromDateOfScan" 
+                                 ng-keypress="searchForm.keyEvents($event)"
+                                 is-open="openedFrom"
+                                 datepicker-popup="dd.MM.yyyy"
+                                 close-text="Close">
+                          <span class="input-group-btn">
+                            <button type="button" class="btn btn-default" ng-click="searchForm.openDatepickerFrom($event)">
+                              <span class="glyphicon glyphicon-calendar"></span>
+                            </button>
+                          </span>
+                        </div>
+                        <div id="search-to-dateofscan" class="input-group">
+                          <input type="text" class="form-control" placeholder="Bis"
+                                 ng-model="searchForm.toDateOfScan" 
+                                 ng-keypress="searchForm.keyEvents($event)"
+                                 is-open="openedTo"
+                                 datepicker-popup="dd.MM.yyyy"
+                                 close-text="Close">
+                          <span class="input-group-btn">
+                            <button type="button" class="btn btn-default" ng-click="searchForm.openDatepickerTo($event)">
+                              <span class="glyphicon glyphicon-calendar"></span>
+                            </button>
+                          </span>
                         </div>
                       </li>
                     </ul>

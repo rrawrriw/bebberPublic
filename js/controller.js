@@ -7,21 +7,26 @@ var appCtrl = angular.module('appCtrl', [
 
 appCtrl.controller('initCtrl', [
   '$scope',
+  '$rootScope',
   '$http', 
   '$modal', 
   'Docs', 
   'Globals',
-  function($scope, $http, $modal, Docs, Globals) {
+  function($scope, $rootScope, $http, $modal, Docs, Globals) {
 
+    $rootScope.searchResultLength = 0;
     $scope.globals = Globals;
     $scope.docs = Docs;
 
     $scope.searchForm = {
       labels: [],
       docNumbers: [],
-      docName: "",
+      fromDateOfScan: null,
+      toDateOfScan: null,
       opened: true,
+
       findDocs: function () {
+        console.log("findDocs!");
         var that = this;
         var request = this.makeSearchJSON();
 
@@ -30,18 +35,11 @@ appCtrl.controller('initCtrl', [
         }
         
         $scope.docs.find(request)
-          .then(function (result) {
-            that.result = result;
-            var modal = $modal.open({
-              animation: true,
-              templateUrl: '/public/angular-tpls/searchResultModal.html',
-              controller: 'searchResultModalCtrl',
-              size: 'lg',
-              resolve: {
-                'result': function () { return result },
-              },
-            });
+          .then(function (response) {
+            var result = response.Result;
+            var modal = that.openSearchResult(result);
             modal.result.then(function () {
+              $rootScope.searchResultLength = $scope.docs.readCurrDocs().length;
               that.toggle();
             });
           })
@@ -51,23 +49,20 @@ appCtrl.controller('initCtrl', [
 
       },
 
-      openSearchResult: function () {
+      openSearchResult: function (result) {
+        console.log('openSearchResult');
         var modal = $modal.open({
           animation: true,
           templateUrl: '/public/angular-tpls/searchResultModal.html',
           controller: 'searchResultModalCtrl',
           size: 'lg',
           resolve: {
-            'result': function () { return $scope.docs.readCurrDocs() },
+            'result': function () { return result },
           },
         });
-
+        return modal;
       },
 
-      searchResultLength: function () {
-        console.log('jjj');
-        return $scope.docs.readCurrDocs().length;
-      },
 
       toggle: function () {
         this.opened = !this.opened;
@@ -76,7 +71,8 @@ appCtrl.controller('initCtrl', [
       clear: function () {
         this.labels = [];
         this.docNumbers = [];
-        this.docName = "";
+        this.fromDateOfScan = null;
+        this.toDateOfScan = null;
       },
 
       keyEvents: function (keyEvent) {
@@ -90,27 +86,46 @@ appCtrl.controller('initCtrl', [
         var valid = 0;
         
         if (this.labels.length > 0) {
-          searchObj['labels'] = {'$in': this.labels};
+          searchObj["Labels"] = this.labels.join(",");
           valid += 1;
         }
         if (this.docNumbers.length > 0) {
-          var tmp = [];
-          angular.forEach(this.docNumbers, function (v, k) {
-            tmp.push(v.toString());
-          });
-          searchObj['accountdata.docnumbers'] = {'$in': tmp};
+          searchObj["AccountData.DocNumbers"] = this.docNumbers.join(",");
           valid += 1;
         }
-        if (this.docName !== "") {
-          searchObj['name'] = {'$regex': '/'+ this.docName +'/'};
+        if (this.fromDateOfScan !== null || 
+            this.toDateOfScan !== null) {
+          var tmp = searchObj["Infos.DateOfScan"] = {};
+          if (this.formDateOfScan !== null) {
+            var d = new Date(this.fromDateOfScan);
+            tmp["$gte"] = d.toISOString();
+          }
+          if (this.toDateOfScan !== null) {
+            var d = new Date(this.toDateOfScan);
+            tmp["$lte"] = d.toISOString();
+          }
+
           valid += 1;
         }
 
         if (valid === 0) {
           return undefined;
         } else {
-          return JSON.stringify(searchObj);
+          var searchStr = JSON.stringify(searchObj);
+          return searchStr;
         }
+      },
+
+      openDatepickerFrom: function ($event) {
+        $event.preventDefault();
+        $event.stopPropagation();
+        $scope.openedFrom = true;
+      },
+
+      openDatepickerTo: function ($event) {
+        $event.preventDefault();
+        $event.stopPropagation();
+        $scope.openedTo = true;
       },
 
     };
@@ -159,7 +174,7 @@ appCtrl.controller('changeDocNameModalCtrl', ['$scope', '$modalInstance', 'Doc',
   function ($scope, $modalInstance, Doc, Docs, Globals) {
 
     $scope.doc = Doc;
-    $scope.newDocName = $scope.doc.name;
+    $scope.newDocName = $scope.doc.Name;
     $scope.globals = Globals;
     $scope.docs = Docs;
     $scope.opened = true;
@@ -169,9 +184,8 @@ appCtrl.controller('changeDocNameModalCtrl', ['$scope', '$modalInstance', 'Doc',
     };
 
     $scope.save = function () {
-      $scope.docs.changeDocName($scope.doc.name, $scope.newDocName)
+      $scope.docs.changeDocName($scope.doc.Name, $scope.newDocName)
         .then(function (response) {
-          console.log('renamed '+ $scope.newDocName);
           $modalInstance.close($scope.newDocName);
         })
         .catch(function (response) {
@@ -188,11 +202,15 @@ appCtrl.controller('changeDocNameModalCtrl', ['$scope', '$modalInstance', 'Doc',
   }
 ]);
 
-appCtrl.controller('searchResultModalCtrl', ['$scope', '$modalInstance', 'result', 'Docs', 'Globals',
+appCtrl.controller('searchResultModalCtrl', [
+  '$scope', '$modalInstance', 'result', 'Docs', 'Globals',
   function ($scope, $modalInstance, result, Docs, Globals) {
     $scope.docs = Docs;
     $scope.globals = Globals;
     $scope.result = result;
+
+    console.log('searchResultModal');
+    console.log(result);
 
     $scope.cancel = function () {
       $modalInstance.dismiss('cancel');
@@ -214,39 +232,45 @@ appCtrl.controller('searchResultModalCtrl', ['$scope', '$modalInstance', 'result
   }
 ]);
 
-appCtrl.controller('loginCtrl', ['$scope', '$rootScope', '$http', '$location', '$log', 'User', 
-  function($scope, $rootScope, $http, $location, $log, User) {
+appCtrl.controller('loginCtrl', [
+  '$scope', '$rootScope', '$http', '$location', '$log', 'User', 'Globals', 
+  function($scope, $rootScope, $http, $location, $log, User, Globals) {
     angular.element("#username").focus();
+    $scope.globals = Globals
     $scope.login = function () {
       var user = {Username: $scope.username,
                   Password: $scope.password}
       $http.post('/Login', user)
-        .success(function (data) {
-          if (data.Status === 'fail') {
-            $log.error(data.Msg);
-          } else if (data.Status === 'success') {
+        .success(function (response) {
+          if (response.Status === 'fail') {
+          } else if (response.Status === 'success') {
             $rootScope.loggedInAs = user.Username;
             $rootScope.user = user
             $location.url('/newDocs');
           }
         })
-        .error(function (data) {
-          $log.error(data);
+        .error(function (response) {
+          $scope.globals.globalErrMsg(response.Msg);
         })
     }
 
   }
 ]);
 
-appCtrl.controller('newDocsCtrl', ['$scope', '$location', 'Docs', 'Globals',
-  function ($scope, $location, Docs, Globals) {
+appCtrl.controller('newDocsCtrl', [
+  '$scope', '$rootScope', '$location', 'Docs', 'Globals',
+  function ($scope, $rootScope, $location, Docs, Globals) {
     $scope.globals = Globals;
     $scope.docs = Docs;
-    $scope.docs.find('{"labels": {"$in":  ["Neu"]}}')
-      .then(function (result) {
-        $scope.docs.saveDocs(result);
+    $scope.docs.find('{"Labels": "Neu"}')
+      .then(function (response) {
+        $scope.docs.saveDocs(response.Result);
         var doc = $scope.docs.firstDoc();
-        $scope.globals.goToDoc(doc.name); 
+        $rootScope.searchResultLength = $scope.docs.readCurrDocs().length;
+        $scope.globals.goToDoc(doc.Name); 
+      })
+      .catch(function (response) {
+        $scope.globals.globalErrMsg(response.Msg);
       });
 
   }
@@ -255,10 +279,10 @@ appCtrl.controller('newDocsCtrl', ['$scope', '$location', 'Docs', 'Globals',
 appCtrl.controller('singleViewCtrl', [
   '$scope', '$rootScope', '$http', '$log', '$routeParams', '$location', '$q',
   '$timeout', '$document', '$modal', 'pdfDelegate', 'User',
-  'SearchStr', 'Docs', 'Globals', 'AccProcess', 'DocNumberProposal',
+  'Docs', 'Globals', 'AccProcess', 'DocNumberProposal',
   function ($scope, $rootScope, $http, $log, $routeParams, 
     $location, $q, $timeout, $document, $modal, pdfDelegate, User,
-    SearchStr, Docs, Globals, AccProcess, DocNumberProposal) {
+    Docs, Globals, AccProcess, DocNumberProposal) {
   
     var setupCtrl = function () {
       $scope.globals = Globals;
@@ -270,7 +294,6 @@ appCtrl.controller('singleViewCtrl', [
 
       $scope.docNumberProposal = DocNumberProposal;
 
-      $scope.searchStr = SearchStr;
       $scope.accProcess = AccProcess;
 
       $scope.currPDFPage = 1;
@@ -300,7 +323,7 @@ appCtrl.controller('singleViewCtrl', [
           });
 
           this.modal.result.then(function (newName) {
-            $scope.doc.name = newName;
+            $scope.doc.Name = newName;
             $scope.globals.goToDoc(newName);
           });
 
@@ -311,10 +334,10 @@ appCtrl.controller('singleViewCtrl', [
         modal: undefined,
         open: function () {
           var that = this;
-          var docNumbers = $scope.doc.accountdata.docnumbers;
-          var accNumber = $scope.doc.accountdata.accnumber;
-          var from = $scope.doc.accountdata.docperiod.from;
-          var to = $scope.doc.accountdata.docperiod.to;
+          var docNumbers = $scope.doc.AccountData.DocNumbers;
+          var accNumber = $scope.doc.AccountData.AccNumber;
+          var from = $scope.doc.AccountData.DocPeriod.From;
+          var to = $scope.doc.AccountData.DocPeriod.To;
           $scope.accProcess.findAll(docNumbers, accNumber, from, to)
             .then(function (accProcess) {
 
@@ -350,11 +373,11 @@ appCtrl.controller('singleViewCtrl', [
           this.modal.result.then(function (proposal) {
             var proposalStr = String(proposal);
             var proposalInt = parseInt(proposal);
-            $scope.docs.appendDocNumbers($scope.doc.name, [proposalStr])
+            $scope.docs.appendDocNumbers($scope.doc.Name, [proposalStr])
               .then(function (response) {
                 $scope.docNumberProposal.save(proposalInt)
                   .catch(function (response) {
-                    $scope.docs.removeDocNumber($scope.doc.name, proposalStr)
+                    $scope.docs.removeDocNumber($scope.doc.Name, proposalStr)
                       .catch(function (response) {
                         $scope.globals.globalErrMsg(response.Msg);
                       });
@@ -375,15 +398,13 @@ appCtrl.controller('singleViewCtrl', [
     $scope.labels = {
       input: [],
       save: function () {
-        var docName = $scope.doc.name;
+        var docName = $scope.doc.Name;
         var that = this;
         $scope.docs.appendLabels(docName, this.input)
           .then(function (response) {
-            $log.debug("Aw:"+ response);
             that.input = [];
           })
           .catch(function (response) {
-            $log.error(response);
             $scope.globals.globalErrMsg(response.Msg);
           });
       },
@@ -393,13 +414,9 @@ appCtrl.controller('singleViewCtrl', [
         }
       },
       remove: function (label) {
-        var docName = $scope.doc.name;
+        var docName = $scope.doc.Name;
         $scope.docs.removeLabel(docName, label)
-          .then(function (response) {
-            $log.debug(response);
-          })
           .catch(function (response) {
-            $log.debug(response);
             $scope.globals.globalErrMsg(response);
           });
       }
@@ -408,15 +425,13 @@ appCtrl.controller('singleViewCtrl', [
     $scope.docnumbers = {
       input: [],
       save: function () {
-        var docName = $scope.doc.name;
+        var docName = $scope.doc.Name;
         var that = this;
         $scope.docs.appendDocNumbers(docName, this.input)
           .then(function (response) {
-            $log.debug(response);
             that.input = [];
           })
           .catch(function (response) {
-            $log.error(response);
             $scope.globals.globalErrMsg(response);
           });
       },
@@ -426,12 +441,8 @@ appCtrl.controller('singleViewCtrl', [
         }
       },
       remove: function (number) {
-        $scope.docs.removeDocNumber($scope.doc.name, number)
-          .then(function (response) {
-            $log.debug(response);
-          })
+        $scope.docs.removeDocNumber($scope.doc.Name, number)
           .catch(function (response) {
-            $log.error(response);
             $scope.globals.globalErrMsg(response);
           });
       }
@@ -525,17 +536,17 @@ appCtrl.controller('singleViewCtrl', [
 
     $scope.nextDoc = function () {
       var nextDoc = $scope.docs.nextDoc();
-      $scope.globals.goToDoc(nextDoc.name);
+      $scope.globals.goToDoc(nextDoc.Name);
     }
 
     $scope.prevDoc = function () {
       var prevDoc = $scope.docs.prevDoc();
-      $scope.globals.goToDoc(prevDoc.name);
+      $scope.globals.goToDoc(prevDoc.Name);
     }
 
     $scope.saveDateOfReceipt = function() {
-      var date = $scope.doc.infos.dateofreceipt;
-      $scope.docs.changeDateOfReceipt($scope.doc.name, date)
+      var date = $scope.doc.Infos.DateOfReceipt;
+      $scope.docs.changeDateOfReceipt($scope.doc.Name, date)
         .then(function (response) {
           $scope.glowGreen.dateOfReceipt = true;
           $timeout(function () {
@@ -543,7 +554,6 @@ appCtrl.controller('singleViewCtrl', [
           }, 2000);
         })
         .catch(function (response) {
-          $log.error(response);
           $scope.globals.globalErrMsg(response.Msg);
         });
 
@@ -551,10 +561,10 @@ appCtrl.controller('singleViewCtrl', [
 
     $scope.saveAccData = function () {
       var g = $scope.globals
-      var docName = $scope.doc.name;
-      var accNumber = parseInt($scope.doc.accountdata.accnumber);
-      var from = $scope.doc.accountdata.docperiod.from;
-      var to = $scope.doc.accountdata.docperiod.to;
+      var docName = $scope.doc.Name;
+      var accNumber = parseInt($scope.doc.AccountData.AccNumber);
+      var from = $scope.doc.AccountData.DocPeriod.From;
+      var to = $scope.doc.AccountData.DocPeriod.To;
       var accData = {
         accNumber: accNumber,
         docPeriod: {
@@ -564,21 +574,19 @@ appCtrl.controller('singleViewCtrl', [
       }
       $scope.docs.saveAccData(docName, accData)
         .then(function (response) {
-          $log.debug('successfully saved accountd data');
           $scope.glowGreen.accData = true;
           $timeout(function () {
             $scope.glowGreen.accData = false;
           }, 2000);
         })
         .catch(function (response) {
-          $log.error(response);
-          $scope.globals.globalErrMsg(response);
+          $scope.globals.globalErrMsg(response.Msg);
         });
     }
 
     $scope.saveNote = function () {
-      var docName = $scope.doc.name;
-      $scope.docs.saveNote(docName, $scope.doc.note)
+      var docName = $scope.doc.Name;
+      $scope.docs.saveNote(docName, $scope.doc.Note)
         .then(function (response) {
           $scope.noteGlowGreen = true;
           $timeout(function () {
@@ -586,7 +594,6 @@ appCtrl.controller('singleViewCtrl', [
           }, 2000);
         })
         .catch(function (response) {
-          $log.error(response);
           $scope.globals.globalErrMsg(response);
         });
     }

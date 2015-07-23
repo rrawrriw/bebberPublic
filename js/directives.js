@@ -27,7 +27,7 @@ appDirectives.directive('dateProxy', ['Globals',
 appDirectives.directive('shortcuts', ['$window',
   function ($window) {
 
-    var removeNewLabel = function (docName, docs, gloabls) {
+    var removeNewLabel = function (docName, docs, globals) {
       docs.removeLabel(docName, 'Neu')
         .catch(function (response) {
           globals.globalErrMsg(response.Msg);

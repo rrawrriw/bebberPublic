@@ -54,32 +54,8 @@ appServices.factory('Globals', ['$location','$rootScope', '$timeout',
   }
 ]);
 
-appServices.factory('SearchStr', function() {
-  return {
-    _draft: {}, // Tag objects
-    make: function () {
-      var tagNames = [];
-      angular.forEach(this._draft, function (v,k) {
-        var obj = {}
-        tagNames.push(k);
-        angular.forEach(v, function (v,k) {
-            obj[k] = v;
-        });
-        //searchStr.push(obj);
-      });
-
-      searchStr = {
-            '$in': {'tags': tagNames},
-      }
-
-      return JSON.stringify(searchStr);
-
-    },
-  }
-});
-
-appServices.factory('Docs', ['$log', '$http', '$q',
-  function ($log, $http, $q) {
+appServices.factory('Docs', ['$http', '$q',
+  function ($http, $q) {
     return {
 
       _currDocs: {},
@@ -90,12 +66,16 @@ appServices.factory('Docs', ['$log', '$http', '$q',
         var that = this;
         var deferred = $q.defer();
 
-        $http.post('/Search', searchStrJSON)
-          .success(function (result) {
-            deferred.resolve(result);
+        $http.post('/SearchDocs', searchStrJSON)
+          .success(function (response) {
+            if (response.Status === 'success') {
+              deferred.resolve(response);
+            } else {
+              deferred.reject(response);
+            }
           })
-          .error(function (data) {
-            deferred.reject(data);
+          .error(function (response) {
+            deferred.reject(response);
           });
 
         return deferred.promise;
@@ -105,7 +85,7 @@ appServices.factory('Docs', ['$log', '$http', '$q',
         var that = this;
         this._currDocs = {};
         angular.forEach(docs, function (v, k) {
-          that._currDocs[v.name] = v;
+          that._currDocs[v.Name] = v;
         });
         this.sortByDateOfScan();
       },
@@ -114,7 +94,7 @@ appServices.factory('Docs', ['$log', '$http', '$q',
         var that = this;
         var currDocs = [];
         angular.forEach(this._sortedDocNames, function (v, k) {
-          currDocs.push(that._currDocs[v.name]);
+          currDocs.push(that._currDocs[v.Name]);
         });
         return currDocs;
       },
@@ -125,7 +105,7 @@ appServices.factory('Docs', ['$log', '$http', '$q',
         this._sortedDocNames = [];
 
         angular.forEach(this._currDocs, function (v, k) {
-          that._sortedDocNames.push({name: v.name, dateOfScan: v.infos.dateofscan})
+          that._sortedDocNames.push({name: v.Name, dateOfScan: v.Infos.DateOfScan})
         });
 
         this._sortedDocNames.sort(function (a, b) {
@@ -167,7 +147,7 @@ appServices.factory('Docs', ['$log', '$http', '$q',
         var that = this;
         angular.forEach(that._currDocs[name].labels, function (v, k) {
           if (label === v) {
-            that._currDocs[name].labels.splice(k, 1);
+            that._currDocs[name].Labels.splice(k, 1);
           }
         });
       },
@@ -210,7 +190,7 @@ appServices.factory('Docs', ['$log', '$http', '$q',
         var that = this;
         var deferred = $q.defer();
 
-        var currDocNumbers = this._currDocs[name].accountdata.docnumbers;
+        var currDocNumbers = this._currDocs[name].AccountData.DocNumbers;
         angular.forEach(numbers, function (v, k) {
           if (that.contains(currDocNumbers, v)) {
             numbers.splice(k, 1);
@@ -223,7 +203,7 @@ appServices.factory('Docs', ['$log', '$http', '$q',
               deferred.reject(response)
             } else {
               angular.forEach(numbers, function (value, key) {
-                that._currDocs[name].accountdata.docnumbers.push(value);
+                that._currDocs[name].AccountData.DocNumbers.push(value);
               });
               deferred.resolve(response)
             }
@@ -237,7 +217,7 @@ appServices.factory('Docs', ['$log', '$http', '$q',
 
       _removeDocNumberFromCurrDocs: function (name, number) {
         var that = this;
-        var currDocNumbers = this._currDocs[name].accountdata.docnumbers;
+        var currDocNumbers = this._currDocs[name].AccountData.DocNumbers;
         angular.forEach(currDocNumbers, function (v, k) {
           if (number === v) {
             currDocNumbers.splice(k, 1);
@@ -277,7 +257,7 @@ appServices.factory('Docs', ['$log', '$http', '$q',
             if (response.Status === 'fail') {
               deferred.reject(response)
             } else if (response.Status === 'success') {
-              that._currDocs[name].note = note;
+              that._currDocs[name].Note = note;
               deferred.resolve(note, response)
             }
           })
@@ -319,7 +299,7 @@ appServices.factory('Docs', ['$log', '$http', '$q',
       },
 
       _changeDateOfReceiptFromCurrDocs: function (name, newDate) {
-        this._currDocs[name].infos.dateofreceipt = newDate;
+        this._currDocs[name].Infos.DateOfReceipt = newDate;
       },
 
       changeDateOfReceipt: function (name, newDate) {
@@ -367,9 +347,9 @@ appServices.factory('Docs', ['$log', '$http', '$q',
         $http.patch(url, JSON.stringify(request))
           .success(function (response) {
             if (response.Status === 'success') {
-              that._currDocs[name].accountdata.accnumber = accData.accNumber;
-              that._currDocs[name].accountdata.docperiod.from = accData.docPeriod.from;
-              that._currDocs[name].accountdata.docperiod.to = accData.docPeriod.to;
+              that._currDocs[name].AccountData.Accnumber = accData.accNumber;
+              that._currDocs[name].AccountData.DocPeriod.From = accData.docPeriod.from;
+              that._currDocs[name].AccountData.DocPeriod.To = accData.docPeriod.to;
               deferred.resolve(response);
             } else if (response.Status === 'fail') {
               deferred.reject(response);
