@@ -26,7 +26,6 @@ appCtrl.controller('initCtrl', [
       opened: true,
 
       findDocs: function () {
-        console.log("findDocs!");
         var that = this;
         var request = this.makeSearchJSON();
 
@@ -36,6 +35,7 @@ appCtrl.controller('initCtrl', [
         
         $scope.docs.find(request)
           .then(function (response) {
+            console.log("success find");
             var result = response.Result;
             var modal = that.openSearchResult(result);
             modal.result.then(function () {
@@ -50,6 +50,9 @@ appCtrl.controller('initCtrl', [
       },
 
       openSearchResult: function (result) {
+        if (!angular.isDefined(result)) {
+          result = $scope.docs.readCurrDocs(); 
+        }
         console.log('openSearchResult');
         var modal = $modal.open({
           animation: true,
@@ -77,6 +80,7 @@ appCtrl.controller('initCtrl', [
 
       keyEvents: function (keyEvent) {
         if (keyEvent.which === 13) {
+          console.log('hit Enter!');
           this.findDocs();
         }
       },
@@ -86,23 +90,23 @@ appCtrl.controller('initCtrl', [
         var valid = 0;
         
         if (this.labels.length > 0) {
-          searchObj["Labels"] = this.labels.join(",");
+          searchObj['Labels'] = this.labels.join(',');
           valid += 1;
         }
         if (this.docNumbers.length > 0) {
-          searchObj["AccountData.DocNumbers"] = this.docNumbers.join(",");
+          searchObj['AccountData.DocNumbers'] = this.docNumbers.join(',');
           valid += 1;
         }
         if (this.fromDateOfScan !== null || 
             this.toDateOfScan !== null) {
-          var tmp = searchObj["Infos.DateOfScan"] = {};
+          var tmp = searchObj['Infos.DateOfScan'] = {};
           if (this.formDateOfScan !== null) {
             var d = new Date(this.fromDateOfScan);
-            tmp["$gte"] = d.toISOString();
+            tmp['from'] = d.toISOString();
           }
           if (this.toDateOfScan !== null) {
             var d = new Date(this.toDateOfScan);
-            tmp["$lte"] = d.toISOString();
+            tmp['to'] = d.toISOString();
           }
 
           valid += 1;
@@ -210,7 +214,6 @@ appCtrl.controller('searchResultModalCtrl', [
     $scope.result = result;
 
     console.log('searchResultModal');
-    console.log(result);
 
     $scope.cancel = function () {
       $modalInstance.dismiss('cancel');

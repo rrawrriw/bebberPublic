@@ -37,7 +37,7 @@ appDirectives.directive('shortcuts', ['$window',
     return {
       link: function (scope, element, attr) {
 
-        var docName = scope.doc.name;
+        var docName = scope.doc.Name;
         var docs = scope.docs;
         var g = scope.globals;
 
@@ -50,12 +50,12 @@ appDirectives.directive('shortcuts', ['$window',
 
           switch (e.which) {
             case 37:
-              docName = docs.prevDoc().name;
+              docName = docs.prevDoc().Name;
               g.goToDoc(docName);
               scope.$apply();
               break;
             case 39:
-              docName = docs.nextDoc().name;
+              docName = docs.nextDoc().Name;
               g.goToDoc(docName);
               scope.$apply();
               break;

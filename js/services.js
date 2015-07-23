@@ -94,7 +94,7 @@ appServices.factory('Docs', ['$http', '$q',
         var that = this;
         var currDocs = [];
         angular.forEach(this._sortedDocNames, function (v, k) {
-          currDocs.push(that._currDocs[v.Name]);
+          currDocs.push(that._currDocs[v.name]);
         });
         return currDocs;
       },

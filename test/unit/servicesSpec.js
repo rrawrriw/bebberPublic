@@ -11,60 +11,76 @@ describe('Services', function() {
 
   describe('Docs', function () {
 
-    var scope,
+    var $scope,
       $httpBackend,
       testDocName = 'testDoc',
       doc = {
-        name: testDocName,
-        infos: {
-          dateofreceipt: makeMongoDBDate('01.01.2000'),
-          dateofscan: makeMongoDBDate('01.01.2000'),
+        Name: testDocName,
+        Labels: ["l1", "l2"],
+        Infos: {
+          DateOfReceipt: makeMongoDBDate('01.01.2000'),
+          DateOfScan: makeMongoDBDate('01.01.2000'),
         }
       };
 
     beforeEach(inject(function ($injector) {
       $httpBackend = $injector.get('$httpBackend');
       $httpBackend
-        .when('POST', '/Search')
-        .respond([doc]);
+        .when('POST', '/SearchDocs')
+        .respond({"Status": "success", "Result": [doc]});
       $httpBackend
         .when('PATCH', '/Doc')
         .respond({Status: 'success'});
-      scope = $injector.get('$rootScope').$new(); 
-      scope.docs = $injector.get('Docs');
-    }));
+      $scope = $injector.get('$rootScope').$new(); 
+      $scope.docs = $injector.get('Docs');
 
-    it('check the existence of Docs factory', inject(function(Docs) {
-      expect(Docs).toBeDefined();
-    }));
-
-    it('should implement a changeDateOfReceipt function', 
-      inject(function(Docs) {
-        expect(Docs.changeDateOfReceipt).toBeDefined();
-    }));
-
-    it('should set date of receipt to 06.04.1987', function (done) {
-      var expectDoc,
-        expectDate = makeMongoDBDate('06.04.1987');
-
-      $httpBackend.expectPOST('/Search');
-      scope.docs.find(JSON.stringify({name: testDocName}))
-        .then(function (data) {
-          scope.docs.saveDocs(data);
+      $httpBackend.expectPOST('/SearchDocs');
+      $scope.docs.find()
+        .then(function (response) {
+          $scope.docs.saveDocs(response.Result);
         });
       $httpBackend.flush();
 
-      $httpBackend.expectPATCH('/Doc');
-      scope.docs.changeDateOfReceipt(testDocName, expectDate)
-        .catch(function(response) {
-          expect(response).toEqual({Status: 'success'});
-        })
-      $httpBackend.flush();
+    }));
 
-      expectDoc = scope.docs.readDoc(testDocName);
-      expect(expectDoc.infos.dateofreceipt).toBe(expectDate);
-      done();
+    describe('changeDateOfReceipt', function () {
+
+      it('should implement a changeDateOfReceipt function', 
+        inject(function(Docs) {
+          expect(Docs.changeDateOfReceipt).toBeDefined();
+      }));
+
+      it('should set date of receipt to 06.04.1987', function (done) {
+        var expectDoc,
+          expectDate = makeMongoDBDate('06.04.1987');
+
+        $httpBackend.expectPATCH('/Doc');
+        $scope.docs.changeDateOfReceipt(testDocName, expectDate)
+          .catch(function(response) {
+            expect(response).toEqual({Status: 'success'});
+          })
+        $httpBackend.flush();
+
+        expectDoc = $scope.docs.readDoc(testDocName);
+        expect(expectDoc.Infos.DateOfReceipt).toBe(expectDate);
+        done();
+      });
+
     });
+
+    describe('readCurrDocs', function () {
+      it('should implement a readCurrDocs function', function () {
+        expect($scope.docs.readCurrDocs).toBeDefined();
+      });
+
+      it('should possible to get the current docs', function () {
+        var expectResult = [doc];
+        var result = $scope.docs.readCurrDocs()
+        expect(result).toEqual(expectResult);
+      });
+
+    });
+
 
   });
 
