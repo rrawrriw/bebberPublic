@@ -80,7 +80,6 @@ appCtrl.controller('initCtrl', [
 
       keyEvents: function (keyEvent) {
         if (keyEvent.which === 13) {
-          console.log('hit Enter!');
           this.findDocs();
         }
       },
@@ -94,19 +93,19 @@ appCtrl.controller('initCtrl', [
           valid += 1;
         }
         if (this.docNumbers.length > 0) {
-          searchObj['AccountData.DocNumbers'] = this.docNumbers.join(',');
+          searchObj['DocNumbers'] = this.docNumbers.join(',');
           valid += 1;
         }
         if (this.fromDateOfScan !== null || 
             this.toDateOfScan !== null) {
-          var tmp = searchObj['Infos.DateOfScan'] = {};
+          var tmp = searchObj['DateOfScan'] = {};
           if (this.formDateOfScan !== null) {
             var d = new Date(this.fromDateOfScan);
-            tmp['from'] = d.toISOString();
+            tmp['From'] = d.toISOString();
           }
           if (this.toDateOfScan !== null) {
             var d = new Date(this.toDateOfScan);
-            tmp['to'] = d.toISOString();
+            tmp['To'] = d.toISOString();
           }
 
           valid += 1;
@@ -116,6 +115,7 @@ appCtrl.controller('initCtrl', [
           return undefined;
         } else {
           var searchStr = JSON.stringify(searchObj);
+          console.log(searchStr);
           return searchStr;
         }
       },

@@ -57,14 +57,18 @@
                         <div class="input-group">
                           <span class="input-group-addon" id="sizing-addon1">Labels:</span>
                           <input type="text" class="form-control" placeholder="Labels"
-                                 ng-model="searchForm.labels" ng-list ng-keypress="searchForm.keyEvents($event)">
+                                 ng-model="searchForm.labels" 
+                                 ng-keypress="searchForm.keyEvents($event)"
+                                 ng-list>
                         </div>
                       </li>
                       <li class="list-group-item">
                         <div class="input-group">
                           <span class="input-group-addon" id="sizing-addon1">Belegnummern:</span>
                           <input type="text" class="form-control" placeholder="Belegnummern"
-                                 ng-model="searchForm.docNumbers" ng-list ng-keypress="searchForm.keyEvents($event)">
+                                 ng-model="searchForm.docNumbers" 
+                                 ng-keypress="searchForm.keyEvents($event)"
+                                 ng-list>
                         </div>
                       </li>
                       <li class="list-group-item">
