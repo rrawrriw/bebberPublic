@@ -131,7 +131,7 @@ appServices.factory('Docs', ['$http', '$q',
               deferred.reject(response)
             } else {
               angular.forEach(labels, function (value, key) {
-                that._currDocs[name].labels.push(value);
+                that._currDocs[name].Labels.push(value);
               });
               deferred.resolve(response)
             }
@@ -145,7 +145,7 @@ appServices.factory('Docs', ['$http', '$q',
 
       _removeLabelFromCurrDocs: function (name, label) {
         var that = this;
-        angular.forEach(that._currDocs[name].labels, function (v, k) {
+        angular.forEach(that._currDocs[name].Labels, function (v, k) {
           if (label === v) {
             that._currDocs[name].Labels.splice(k, 1);
           }

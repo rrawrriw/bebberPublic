@@ -223,7 +223,7 @@ appCtrl.controller('searchResultModalCtrl', [
       $scope.docs.saveDocs($scope.result);
       var doc = $scope.docs.firstDoc();
       $modalInstance.close();
-      $scope.globals.goToDoc(doc.name)
+      $scope.globals.goToDoc(doc.Name)
     };
 
     $scope.keyEvents = function (keyEvent) {
@@ -378,6 +378,10 @@ appCtrl.controller('singleViewCtrl', [
             var proposalInt = parseInt(proposal);
             $scope.docs.appendDocNumbers($scope.doc.Name, [proposalStr])
               .then(function (response) {
+                if (isNaN(proposalInt)) {
+                  return
+                }
+
                 $scope.docNumberProposal.save(proposalInt)
                   .catch(function (response) {
                     $scope.docs.removeDocNumber($scope.doc.Name, proposalStr)
