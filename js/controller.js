@@ -378,18 +378,27 @@ appCtrl.controller('singleViewCtrl', [
             var proposalInt = parseInt(proposal);
             $scope.docs.appendDocNumbers($scope.doc.Name, [proposalStr])
               .then(function (response) {
-                if (isNaN(proposalInt)) {
-                  return
+                $scope.docs.removeLabel($scope.doc.Name, 'Inbox-Buchhaltung')
+                  .catch(function (response) {
+                    $scope.gloabls.globalErrMsg(response.Msg);
+                  });
+                if (!$scope.docs.existsLabel($scope.doc.Name, 'Buchungsbeleg')) {
+                  $scope.docs.appendLabels($scope.doc.Name, ['Buchungsbeleg'])
+                    .catch(function (response) {
+                      $scope.globals.globalErrMsg(response.Msg);
+                    });
                 }
 
-                $scope.docNumberProposal.save(proposalInt)
-                  .catch(function (response) {
-                    $scope.docs.removeDocNumber($scope.doc.Name, proposalStr)
-                      .catch(function (response) {
-                        $scope.globals.globalErrMsg(response.Msg);
-                      });
-                    $scope.globals.globalErrMsg(response.Msg);
-                  });
+                if (!isNaN(proposalInt)) {
+                  $scope.docNumberProposal.save(proposalInt)
+                    .catch(function (response) {
+                      $scope.docs.removeDocNumber($scope.doc.Name, proposalStr)
+                        .catch(function (response) {
+                          $scope.globals.globalErrMsg(response.Msg);
+                        });
+                      $scope.globals.globalErrMsg(response.Msg);
+                    });
+                }
               })
               .catch(function (response) {
                 $scope.globals.globalErrMsg(response.Msg);

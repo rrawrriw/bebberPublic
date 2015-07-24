@@ -133,6 +133,11 @@ describe('Services', function() {
         done();
       });
 
+      it('checks if a label exists', function () {
+        expect($scope.docs.existsLabel(doc.Name, 'l2')).toBe(true);
+        expect($scope.docs.existsLabel(doc.Name, 'none')).toBe(false);
+      });
+
     });
 
     describe('Modifiy doc numbers', function () {

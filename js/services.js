@@ -173,6 +173,11 @@ appServices.factory('Docs', ['$http', '$q',
         return deferred.promise;
       },
 
+      existsLabel: function (name, label) {
+        var doc = this.readDoc(name);
+        return this.contains(doc.Labels, label);
+      },
+
       contains: function (list, obj) {
         var contain = false;
         angular.forEach(list, function (v, k) {
