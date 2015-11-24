@@ -1,0 +1,17 @@
+{
+	"name": "life",
+	"authors": ["Tim Tochtermann"],
+	"license": "MIT",
+	"devDependencies": {
+		"angular-mocks": "1.4.6"
+	},
+	"dependencies": {
+		"jquery": "1.9.1",
+		"bootstrap": "3.3.5",
+		"angular": "1.4.6",
+	       	"angular-bootstrap": "0.14.0",
+		"angular-route": "1.4.6",
+		"angular-resource": "1.4.6"
+	}
+
+}

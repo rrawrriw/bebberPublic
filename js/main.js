@@ -5,7 +5,6 @@ var app = angular.module('bebber', [
   'appDirectives',
   'appCtrl',
   'appFilters',
-  'pdf',
 ]);
 
 

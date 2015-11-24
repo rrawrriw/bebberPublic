@@ -86,9 +86,15 @@ nav#box {
 #fileviewerspace {
   padding-top: 0;
   padding-left: 0;
+  padding-right: 0;
   border-left: 1px solid #e7e7e7; 
   height: 100vh;
-  overflow-y: scroll;
+}
+
+#pdfviewer {
+  height: 91%;
+  width: 100%;
+  border: 0px;
 }
 
 #pdfctrl {

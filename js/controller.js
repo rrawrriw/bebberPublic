@@ -281,10 +281,10 @@ appCtrl.controller('newDocsCtrl', [
 
 appCtrl.controller('singleViewCtrl', [
   '$scope', '$rootScope', '$http', '$log', '$routeParams', '$location', '$q',
-  '$timeout', '$document', '$modal', 'pdfDelegate', 'User',
+  '$timeout', '$document', '$sce', '$modal', 'User',
   'Docs', 'Globals', 'AccProcess', 'DocNumberProposal',
   function ($scope, $rootScope, $http, $log, $routeParams, 
-    $location, $q, $timeout, $document, $modal, pdfDelegate, User,
+    $location, $q, $timeout, $document, $sce, $modal, User,
     Docs, Globals, AccProcess, DocNumberProposal) {
   
     var setupCtrl = function () {
@@ -464,85 +464,12 @@ appCtrl.controller('singleViewCtrl', [
       }
     };
     
-
     $scope.pdf = {
       url: '',
-      totalPages: '?',
-      currPage: 1,
-
-      zoomIn: function() {
-        this.handler().zoomIn();
-      },
-
-      zoomOut: function() {
-        this.handler().zoomOut();
-      },
-
-      nextPage: function() {
-        var pdfDoc = this.handler()
-        pdfDoc.next();
-        this.currPage = pdfDoc.getCurrentPage();
-        this.totalPages = pdfDoc.getPageCount();
-      },
-
-      prevPage: function() {
-        var pdfDoc = this.handler()
-        pdfDoc.prev();
-        this.currPage = pdfDoc.getCurrentPage();
-        this.totalPages = pdfDoc.getPageCount();
-      },
-
-      handler: function () {
-        return pdfDelegate.$getByHandle('pdfFile')
-      },
-
       setup: function (docName) {
         var that = this;
-        this.url = '/ReadDocFile/'+ docName;
-        PDFJS.disableWorker = true;
-        this.handler().load(this.url);
-        this.currPage = 1;
-
-        var timer = $timeout(function() { 
-          that.totalPages = that.handler().getPageCount();
-        }, 1000);
-
-        $scope.$on('destroy', function () {
-          $timeout.cancel(timer);
-        });
-
-      /*
-      PDFJS.disableWorker = true;
-      $http.get($scope.pdfUrl)
-        .success(function (data) {
-          for(var x=0;x<11;x++) {
-          }
-          var pdf = PDFJS.getDocument({data: data}).then(function (pdf) {;
-            pdf.getPage(1).then(function(page) {
-              var scale = 1;
-              var viewport = page.getViewport(scale);
-
-              var canvas = document.getElementById('pdf-files');
-              var context = canvas.getContext('2d');
-              canvas.height = viewport.height;
-              canvas.width = viewport.width;
-
-              var renderContext = {
-                canvasContext: context,
-                viewport: viewport
-              };
-              page.render(renderContext);
-
-            });
-          });
-        })
-        .error(function (data) {
-
-        });
-        */
+        this.url = $sce.trustAsResourceUrl('/pdfviewer/viewer.html?file=/ReadDocFile/'+ docName);
       }
-
-
     }
 
     $scope.glowGreen = {
