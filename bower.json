@@ -1,17 +1,18 @@
 {
-	"name": "life",
+	"name": "docMa",
 	"authors": ["Tim Tochtermann"],
 	"license": "MIT",
 	"devDependencies": {
-		"angular-mocks": "1.4.6"
+		"jasmine": "2.4.0"
 	},
 	"dependencies": {
-		"jquery": "1.9.1",
-		"bootstrap": "3.3.5",
-		"angular": "1.4.6",
-	       	"angular-bootstrap": "0.13.3",
-		"angular-route": "1.4.6",
-		"angular-resource": "1.4.6"
+		"jquery": "2.2.0",
+		"bootstrap": "3.3.6",
+		"angular": "1.4.8",
+		"angular-route": "1.4.8",
+		"angular-resource": "1.4.8",
+		"angular-mocks": "1.4.8",
+		"angular-bootstrap": "1.0.0"
 	}
 
 }

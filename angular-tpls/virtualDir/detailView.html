@@ -12,27 +12,52 @@
   <shortcuts></shortcuts>
   <div id="doc-data" class="col-md-3"> 
     <h4 id="filename">
-      <button class="btn-lastfile" ng-click="prevDoc()"><span class="glyphicon glyphicon-chevron-left"></span></button>
-      <span ng-click="modals.changeDocName.open()">{{doc.Name}}</span>
-      <button class="btn-nextfile" ng-click="nextDoc()"><span class="glyphicon glyphicon-chevron-right"></span></button>
+      <button class="btn-lastfile" ng-click="docAction.prevDoc()"><span class="glyphicon glyphicon-chevron-left"></span></button>
+      <span ng-click="modals.changeDocName.open()">{{docData.name}}</span>
+      <button class="btn-nextfile" ng-click="docAction.nextDoc()"><span class="glyphicon glyphicon-chevron-right"></span></button>
     </h4>
     <div id="section-labels">
-      <header class="section-head"
-              ng-click="docDateMenu.labels.toggle()" >
+    <header class="section-head">
         Labels 
       </header>
       <div class="docdata-section">
         <ul id="labels">
-          <li ng-repeat="label in doc.Labels">
+          <li ng-repeat="label in docData.labels">
             <span class="label label-primary">
-              {{label}}
-              <span class="glyphicon glyphicon-remove-circle remove-label" ng-click="labels.remove(label)"></span>
+              {{label.name}}
+              <span class="glyphicon glyphicon-remove-circle remove-label"
+                    ng-click="docAction.removeLabel(label.id)"></span>
             </span>
           </li>
         </ul>
         <div class="docdata-ctrls">
+
+					<div id="label-select">
+						<div class="input-group">
+							<div class="input-group-btn">
+								<input type="text" class="form-control" placeholder="Search for..."
+                        ng-model="labelSelect.input"
+                        ng-click="labelSelect.open()"
+                        ng-keydown="labelSelect.keydown($event)"
+                        ng-blur="labelSelect.close()">
+								<button class="btn btn-default" type="button">list</button>
+								<button class="btn btn-default" type="button">add</button>
+							</div>
+						</div>
+						<ul id="label-list" ng-hide="labelSelect.isHidden" role="listbox">
+							<li role="presenter" 
+                  ng-repeat="label in labelSelect.labels"
+                  ng-class="{selected: label.selected}"
+                  ng-mouseover="label.selected=true"
+                  ng-mouseleave="label.selected=false"
+                  ng-click="labelSelect.joinLabel()">{{ label.name }}</li>
+						</ul>
+					</div>
+
+          <!--
           <input id="labels-input" type="text" ng-model="labels.input" ng-keypress="labels.keyEvent($event)" ng-list>
           <span class="glyphicon glyphicon-plus append-label" ng-click="labels.save()"></span>
+          -->
         </div>
       </div>
     </div>
@@ -45,13 +70,13 @@
             <td>
               <div class="input-group">
                 <input class="form-control" id="date-of-receipt-input" 
-                       ng-model="doc.Infos.DateOfReceipt"
+                       ng-model="docData.dateOfReceipt"
                        ng-class="{'glow-green': glowGreen.dateOfReceipt}"
                        date-proxy>
                 <span class="input-group-btn">
                   <button class="btn btn-default"
                           type="button"
-                          ng-click="saveDateOfReceipt()">
+                          ng-click="docAction.saveDateOfReceipt()">
                       <span class="glyphicon glyphicon-floppy-disk"></span>
                   </button>
                 </span>
@@ -59,7 +84,7 @@
             </td>
           </tr>
           <tr>
-            <td>Scandatum</td><td>{{doc.Infos.DateOfScan|euroDate}}</td>
+            <td>Scandatum</td><td>{{docData.dateOfScan|euroDate}}</td>
           </tr>
         </tbody>
       </table>
@@ -70,19 +95,19 @@
         <div id="docnumbers">
           <h4 class="subsection">Belegnummern</h4>
           <ul>
-            <li ng-repeat="docnumber in doc.AccountData.DocNumbers">
-            {{docnumber}}
-            <span class="glyphicon glyphicon-remove-circle remove-docnumber" ng-click="docnumbers.remove(docnumber)"></span>
+            <li ng-repeat="docnumber in docData.accountData.docNumbers">
+            {{docnumber.value}}
+            <span class="glyphicon glyphicon-remove-circle remove-docnumber" ng-click="docNumbers.remove(docnumber.id)"></span>
             </li>
           </ul>
           <input type="text" id="docnumbers-input"
-                 ng-model="docnumbers.input" ng-keypress="docnumbers.keyEvent($event)" ng-list>
-          <span class="glyphicon glyphicon-plus append-docnumbers" ng-click="docnumbers.save()"></span>
+                 ng-model="docNumbers.input" ng-keypress="docNumbers.keyEvent($event)" ng-list>
+          <span class="glyphicon glyphicon-plus append-docnumbers" ng-click="docNumbers.save()"></span>
         </div>
         <div id="accnumber" class="input-group">
           <label for="accnumber-input">Kontonr.:</label>
           <input type="text" id="accnumber-input" 
-                 ng-model="doc.AccountData.AccNumber"
+                 ng-model="docData.accountData.accountNumber"
                  ng-class="{'glow-green': glowGreen.accData}">
         </div>
         <div id="docperiod">
@@ -90,33 +115,33 @@
           <div class="input-group period-date">
             <label for="from-date">Von:</label>
             <input type="text" id="from-date"
-                   ng-model="doc.AccountData.DocPeriod.From"
+                   ng-model="doc.accountData.from"
                    ng-class="{'glow-green': glowGreen.accData}"
                    date-proxy>
           </div>
           <div class="input-group period-date">
             <label for="to-date">Bis:</label>
             <input type="text" id="to-date"
-                   ng-model="doc.AccountData.DocPeriod.To"
+                   ng-model="doc.accountData.to"
                    ng-class="{'glow-green': glowGreen.accData}"
                    date-proxy>
           </div>
         </div>
         <div id="accdata-ctrls">
-          <span class="glyphicon glyphicon-floppy-disk save-accdata" ng-click="saveAccData()"></span>
+          <span class="glyphicon glyphicon-floppy-disk save-accdata" ng-click="saveAccountData()"></span>
         </div>
         <div id="read-accprocess">
-          <button type="button" class="btn btn-default" ng-click="modals.accProcess.open()">Buchungsdaten</button>
+          <button type="button" class="btn btn-default" ng-click="modals.accountingData.open()">Buchungsdaten</button>
         </div>
       </div>
     </div>
     <div id="note">
       <header class="section-head">
         Notiz
-        <span class="save-note glyphicon glyphicon-floppy-disk" ng-click="saveNote()"></span>
+        <span class="save-note glyphicon glyphicon-floppy-disk" ng-click="docAction.saveNote()"></span>
       </header>
       <div class="docdata-section">
-        <textarea class="note" cols=10 ng-model="doc.Note" ng-class="{'glow-green': noteGlowGreen}"></textarea>
+        <textarea class="note" cols=10 ng-model="docData.note" ng-class="{'glow-green': noteGlowGreen}"></textarea>
       </div>
     </div>
   </div>

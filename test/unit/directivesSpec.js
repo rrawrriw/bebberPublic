@@ -1,30 +1,28 @@
 'use strict';
 
-/* jasmine specs for directives go here */
-
 describe('directives', function() {
-  var $compile,
-    $rootScope,
-    $scope;
+  var $compile;
+  var $rootScope;
+  var $scope;
 
-  beforeEach(module('bebber'));
+  beforeEach(module('docMa'));
 
-  beforeEach(inject(function ($injector) {
+  beforeEach(inject(function($injector) {
     $compile = $injector.get('$compile');
     $rootScope = $injector.get('$rootScope');
     $scope = $rootScope.$new();
   }));
 
-  describe('dateProxy', function () {
+  describe('dateProxy', function() {
 
-    it('should be show date 07.07.2015', function () {
+    it('should be show date 07.07.2015', function() {
       $scope.dateModel = '2015-07-07T18:09:13+02:00';
       var elem = $compile('<input ng-model="dateModel" date-proxy>')($scope);
       $rootScope.$digest();
       expect(elem.val()).toEqual('07.07.2015');
     });
 
-    it('should be save date 2015-07-07T00:00:00Z', function () {
+    it('should be save date 2015-07-07T00:00:00Z', function() {
       $scope.dateModel = '2015-07-06T00:00:00+02:00';
       var elem = $compile('<input name="date" ng-model="dateModel" date-proxy>')($scope);
       $rootScope.$digest();
@@ -34,16 +32,14 @@ describe('directives', function() {
 
   });
 
-  describe('focusMe', function () {
-    var $modal,
-      $timeout;
+  describe('focusMe', function() {
+    var $timeout;
 
     beforeEach(inject(function($injector) {
-      $modal = $injector.get('$modal');
       $timeout = $injector.get('$timeout');
     }));
 
-    it('should set the focus when the modal is opened', function () {
+    it('should set the focus when the modal is opened', function() {
       var html = '<input id="testInput" focus-me="{{opened}}">'
 
       var elem = $compile(html)($scope);

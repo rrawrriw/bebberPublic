@@ -12,15 +12,20 @@
     <script src="public/ext/angular/angular.min.js"></script>
     <script src="public/ext/angular-route/angular-route.min.js"></script>
     <script src="public/ext/angular-resource/angular-resource.min.js"></script>
-    <script src="public/ext/angular-ui/ui-bootstrap-tpls-0.13.3.min.js"></script>
-    <script src="public/js/main.js"></script>
-    <script src="public/js/directives.js"></script>
-    <script src="public/js/filters.js"></script>
-    <script src="public/js/services.js"></script>
-    <script src="public/js/controller.js"></script>
+    <script src="public/ext/angular-bootstrap/ui-bootstrap-tpls.min.js"></script>
+    <script src="public/ext/underscore/underscore-min.js"></script>
+
+    <script src="public/app/app.js"></script>
+    <script src="public/app/common/controllers.js"></script>
+    <script src="public/app/common/services/utils.js"></script>
+    <script src="public/app/common/services/user.js"></script>
+    <script src="public/app/virtualDir/controllers.js"></script>
+    <script src="public/app/virtualDir/services/labels.js"></script>
+    <script src="public/app/virtualDir/services/docs.js"></script>
+    <script src="public/app/virtualDir/services/virtualDir.js"></script>
   </head>
  
-  <body ng-controller="initCtrl">
+  <body ng-controller="InitCtrl">
     <div id="global-err-msg" class="alert alert-danger alert-dismissible" 
          ng-class="globalErrMsg.show ? 'show-global-err-msg':'hide-global-err-msg'">
       <button type="button" class="close" data-dismiss="alert" aria-label="Close" ng-click="globalErrMsg.show=false">
@@ -48,7 +53,7 @@
                     <span class="glyphicon glyphicon-list-alt"></span>
                     <span class="badge">{{searchResultLength}}</span>
                   </button>
-                  <div id="searchform" collapse="searchForm.opened">
+                  <div id="searchform" ng-hide="searchForm.opened">
                     <ul class="list-group">
                       <li class="list-group-item">
                         <div class="input-group">
