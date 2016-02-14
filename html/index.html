@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="de" ng-app="bebber">
+<html lang="de" ng-app="docMa">
   <head>
     <meta charset="utf-8">
     <meta name="author" content="gr">
@@ -15,17 +15,19 @@
     <script src="public/ext/angular-bootstrap/ui-bootstrap-tpls.min.js"></script>
     <script src="public/ext/underscore/underscore-min.js"></script>
 
-    <script src="public/app/app.js"></script>
-    <script src="public/app/common/controllers.js"></script>
+    <script src="public/app/common/filters.js"></script>
     <script src="public/app/common/services/utils.js"></script>
     <script src="public/app/common/services/user.js"></script>
+    <script src="public/app/common/services/session.js"></script>
+    <script src="public/app/common/controllers.js"></script>
+    <script src="public/app/virtualDir/directives.js"></script>
     <script src="public/app/virtualDir/controllers.js"></script>
-    <script src="public/app/virtualDir/services/labels.js"></script>
-    <script src="public/app/virtualDir/services/docs.js"></script>
+    <script src="public/app/virtualDir/services/docMaAPI.js"></script>
     <script src="public/app/virtualDir/services/virtualDir.js"></script>
+    <script src="public/app/app.js"></script>
   </head>
  
-  <body ng-controller="InitCtrl">
+  <body>
     <div id="global-err-msg" class="alert alert-danger alert-dismissible" 
          ng-class="globalErrMsg.show ? 'show-global-err-msg':'hide-global-err-msg'">
       <button type="button" class="close" data-dismiss="alert" aria-label="Close" ng-click="globalErrMsg.show=false">
@@ -40,78 +42,6 @@
             <div class="navbar-header">
               <a class="navbar-brand" href="/#/login">docMa</a>
             </div>
-          </div>
-          <div class="col-md-4">
-            <form class="navbar-form navbar-left">
-              <div class="form-group">
-                <div class="dropdown">
-                  <button class="btn btn-default" type="button" ng-click="searchForm.toggle()">
-                    Suchformular
-                    <span class="glyphicon glyphicon-search"></span>
-                  </button>
-                  <button class="btn btn-default" ng-click="searchForm.openSearchResult()">
-                    <span class="glyphicon glyphicon-list-alt"></span>
-                    <span class="badge">{{searchResultLength}}</span>
-                  </button>
-                  <div id="searchform" ng-hide="searchForm.opened">
-                    <ul class="list-group">
-                      <li class="list-group-item">
-                        <div class="input-group">
-                          <span class="input-group-addon" id="sizing-addon1">Labels:</span>
-                          <input type="text" class="form-control" placeholder="Labels"
-                                 ng-model="searchForm.labels" 
-                                 ng-keypress="searchForm.keyEvents($event)"
-                                 ng-list>
-                        </div>
-                      </li>
-                      <li class="list-group-item">
-                        <div class="input-group">
-                          <span class="input-group-addon" id="sizing-addon1">Belegnummern:</span>
-                          <input type="text" class="form-control" placeholder="Belegnummern"
-                                 ng-model="searchForm.docNumbers" 
-                                 ng-keypress="searchForm.keyEvents($event)"
-                                 ng-list>
-                        </div>
-                      </li>
-                      <li class="list-group-item">
-                        <h3>Scandatum:</h3>
-                        <div id="search-from-dateofscan" class="input-group">
-                          <input type="text" class="form-control" placeholder="Von"
-                                 ng-model="searchForm.fromDateOfScan" 
-                                 ng-keypress="searchForm.keyEvents($event)"
-                                 is-open="openedFrom"
-                                 datepicker-popup="dd.MM.yyyy"
-                                 close-text="Close">
-                          <span class="input-group-btn">
-                            <button type="button" class="btn btn-default" ng-click="searchForm.openDatepickerFrom($event)">
-                              <span class="glyphicon glyphicon-calendar"></span>
-                            </button>
-                          </span>
-                        </div>
-                        <div id="search-to-dateofscan" class="input-group">
-                          <input type="text" class="form-control" placeholder="Bis"
-                                 ng-model="searchForm.toDateOfScan" 
-                                 ng-keypress="searchForm.keyEvents($event)"
-                                 is-open="openedTo"
-                                 datepicker-popup="dd.MM.yyyy"
-                                 close-text="Close">
-                          <span class="input-group-btn">
-                            <button type="button" class="btn btn-default" ng-click="searchForm.openDatepickerTo($event)">
-                              <span class="glyphicon glyphicon-calendar"></span>
-                            </button>
-                          </span>
-                        </div>
-                      </li>
-                    </ul>
-                    <div class="btn-group">
-                      <button class="btn btn-default" type="button" ng-click="searchForm.findDocs()">Go!</button>
-                      <button class="btn btn-default" type="button" ng-click="searchForm.toggle()">Close</button>
-                      <button class="btn btn-default" type="button" ng-click="searchForm.clear()">Clear</button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </form>
           </div>
           <div class="col-md-4">
             <div id="userdata" class="navbar-right">

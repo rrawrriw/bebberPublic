@@ -12,9 +12,13 @@
   <shortcuts></shortcuts>
   <div id="doc-data" class="col-md-3"> 
     <h4 id="filename">
-      <button class="btn-lastfile" ng-click="docAction.prevDoc()"><span class="glyphicon glyphicon-chevron-left"></span></button>
+      <button class="btn-lastfile" ng-click="docsCtrl.prevDoc()">
+				<span class="glyphicon glyphicon-chevron-left"></span>
+			</button>
       <span ng-click="modals.changeDocName.open()">{{docData.name}}</span>
-      <button class="btn-nextfile" ng-click="docAction.nextDoc()"><span class="glyphicon glyphicon-chevron-right"></span></button>
+      <button class="btn-nextfile" ng-click="docsCtrl.nextDoc()">
+				<span class="glyphicon glyphicon-chevron-right"></span>
+			</button>
     </h4>
     <div id="section-labels">
     <header class="section-head">
@@ -26,7 +30,7 @@
             <span class="label label-primary">
               {{label.name}}
               <span class="glyphicon glyphicon-remove-circle remove-label"
-                    ng-click="docAction.removeLabel(label.id)"></span>
+                    ng-click="docsCtrl.removeLabel(label.id)"></span>
             </span>
           </li>
         </ul>
@@ -71,12 +75,12 @@
               <div class="input-group">
                 <input class="form-control" id="date-of-receipt-input" 
                        ng-model="docData.dateOfReceipt"
-                       ng-class="{'glow-green': glowGreen.dateOfReceipt}"
+                       ng-class="{'glow-green': docsCtrl.glowGreen}"
                        date-proxy>
                 <span class="input-group-btn">
                   <button class="btn btn-default"
                           type="button"
-                          ng-click="docAction.saveDateOfReceipt()">
+                          ng-click="docsCtrl.updateDoc()">
                       <span class="glyphicon glyphicon-floppy-disk"></span>
                   </button>
                 </span>
@@ -95,53 +99,64 @@
         <div id="docnumbers">
           <h4 class="subsection">Belegnummern</h4>
           <ul>
-            <li ng-repeat="docnumber in docData.accountData.docNumbers">
-            {{docnumber.value}}
-            <span class="glyphicon glyphicon-remove-circle remove-docnumber" ng-click="docNumbers.remove(docnumber.id)"></span>
+            <li ng-repeat="docnumber in docData.docNumbers">
+            {{docnumber.number}}
+            <span class="glyphicon glyphicon-remove-circle remove-docnumber" 
+									ng-click="docNumbersCtrl.remove(docnumber.number)">
+						</span>
             </li>
           </ul>
           <input type="text" id="docnumbers-input"
-                 ng-model="docNumbers.input" ng-keypress="docNumbers.keyEvent($event)" ng-list>
-          <span class="glyphicon glyphicon-plus append-docnumbers" ng-click="docNumbers.save()"></span>
+                 ng-model="docNumbersCtrl.input"
+								 ng-keypress="docNumbersCtrl.keyEvent($event)"
+								 ng-list>
+          <span class="glyphicon glyphicon-plus append-docnumbers" 
+								ng-click="docNumbersCtrl.append()">
+					</span>
         </div>
         <div id="accnumber" class="input-group">
           <label for="accnumber-input">Kontonr.:</label>
           <input type="text" id="accnumber-input" 
-                 ng-model="docData.accountData.accountNumber"
-                 ng-class="{'glow-green': glowGreen.accData}">
+                 ng-model="docData.accountData.account_number"
+                 ng-class="{'glow-green': accountDataCtrl.glowGreen}">
         </div>
         <div id="docperiod">
           <h4 class="subsection">Belegzeitraum</h4>
           <div class="input-group period-date">
             <label for="from-date">Von:</label>
             <input type="text" id="from-date"
-                   ng-model="doc.accountData.from"
-                   ng-class="{'glow-green': glowGreen.accData}"
+                   ng-model="docData.accountData.period_from"
+                   ng-class="{'glow-green': accountDataCtrl.glowGreen}"
                    date-proxy>
           </div>
           <div class="input-group period-date">
             <label for="to-date">Bis:</label>
             <input type="text" id="to-date"
-                   ng-model="doc.accountData.to"
-                   ng-class="{'glow-green': glowGreen.accData}"
+                   ng-model="docData.accountData.period_to"
+                   ng-class="{'glow-green': accountDataCtrl.glowGreen}"
                    date-proxy>
           </div>
         </div>
         <div id="accdata-ctrls">
-          <span class="glyphicon glyphicon-floppy-disk save-accdata" ng-click="saveAccountData()"></span>
+          <span class="glyphicon glyphicon-floppy-disk save-accdata" 
+								ng-click="accountDataCtrl.save()">
+					</span>
         </div>
         <div id="read-accprocess">
-          <button type="button" class="btn btn-default" ng-click="modals.accountingData.open()">Buchungsdaten</button>
+          <button type="button" class="btn btn-default" ng-click="modals.accountingData.open()">
+						Buchungsdaten
+					</button>
         </div>
       </div>
     </div>
     <div id="note">
       <header class="section-head">
         Notiz
-        <span class="save-note glyphicon glyphicon-floppy-disk" ng-click="docAction.saveNote()"></span>
+        <span class="save-note glyphicon glyphicon-floppy-disk" ng-click="docsCtrl.updateDoc()"></span>
       </header>
       <div class="docdata-section">
-        <textarea class="note" cols=10 ng-model="docData.note" ng-class="{'glow-green': noteGlowGreen}"></textarea>
+        <textarea class="note" cols=10 ng-model="docData.note" ng-class="{'glow-green': docsCtrl.glowGreen}">
+				</textarea>
       </div>
     </div>
   </div>

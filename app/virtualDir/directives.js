@@ -25,8 +25,7 @@ m.directive('dateProxy', ['utils', function(utils) {
 m.directive('shortcuts', [
   '$window',
   '$log',
-  'Doc',
-  'utils', function($window, $log, Doc, utils) {
+  'utils', function($window, $log, utils) {
 
     var removeLabel = function(doc, label, resp) {
       label = _.filterWhere(scope.docData.labels, {
@@ -45,9 +44,7 @@ m.directive('shortcuts', [
     return {
       link: function(scope, element, attr) {
 
-        var doc = new Doc({
-          id: $socpe.docData.id
-        });
+        var doc = {};
 
         angular.element($window).on('keyup', function(e) {
 

@@ -69,6 +69,20 @@ m.factory('resti', ['$http', '$q', function($http, $q) {
     return result;
   };
 
+  var patch = function(result, url, change) {
+    result.$promise = $http.patch(url, change);
+    result.$promise.then(function(resp) {
+      _.each(resp.data, function(val, key) {
+        result[key] = val;
+      });
+      return resp;
+    }, function(resp) {
+      return $q.reject(resp);
+    });
+
+    return result;
+  };
+
   var remove = function(url) {
     return $http.delete(url);
   };
@@ -79,6 +93,7 @@ m.factory('resti', ['$http', '$q', function($http, $q) {
     readOne: readOne,
     update: update,
     remove: remove,
+    patch: patch,
   };
 }
 ]);
@@ -97,6 +112,14 @@ var DocsAPI_v1 = function(urlPrefix, resti) {
     return resti.update(result, url, change);
   };
 
+  this.renameDoc = function(id, name) {
+    var result = {};
+    var url = urlPrefix + '/docs/' + id + '/name';
+    return resti.patch(result, url, {
+      name: name
+    });
+  };
+
   this.deleteDoc = function(id) {
     var url = urlPrefix + '/docs/' + id;
     return resti.remove(url);
@@ -105,9 +128,10 @@ var DocsAPI_v1 = function(urlPrefix, resti) {
   this.createDocNumber = function(docID, docNumber) {
     var result = {};
     var data = {
+      doc_id: docID,
       number: docNumber,
     };
-    var url = urlPrefix + '/docs/' + docID + '/doc_numbers/';
+    var url = urlPrefix + '/docs/doc_numbers/';
     return resti.create(result, url, data);
   };
 
@@ -118,8 +142,8 @@ var DocsAPI_v1 = function(urlPrefix, resti) {
     return resti.readAll(result, url);
   };
 
-  this.deleteDocNumber = function(docNumberID) {
-    var url = urlPrefix + '/docs/doc_numbers/' + docNumberID
+  this.deleteDocNumber = function(docID, docNumberID) {
+    var url = urlPrefix + '/docs/' + docID + '/doc_numbers/' + docNumberID
     return resti.remove(url);
   };
 
@@ -135,10 +159,37 @@ var DocsAPI_v1 = function(urlPrefix, resti) {
     return resti.update(result, url, change);
   };
 
-  this.findDocsByLabel = function(label) {
-    var result = [];
-    var url = urlPrefix + '/docs?label_name=' + label;
+  this.readAllLabels = function(docID) {
+    var result = []
+    var url = urlPrefix + '/docs/' + docID + '/labels';
     return resti.readAll(result, url);
+  };
+
+  this.findDocsByLabel = function(labelID) {
+    var result = [];
+    var url = urlPrefix + '/labels/' + labelID + '/docs';
+    return resti.readAll(result, url);
+  };
+
+  this.joinLabel = function(docID, labelID) {
+    var data = {
+      doc_id: docID,
+      label_id: labelID,
+    };
+    var result = {};
+    var url = urlPrefix + '/docs/labels';
+    return resti.create(result, url, data)
+  };
+
+  this.detachLabel = function(docID, labelID) {
+    var url = urlPrefix + '/docs/' + docID + '/labels/' + labelID;
+    return resti.remove(url)
+  };
+
+  this.readAccountingData = function(docID) {
+    var result = [];
+    var url = urlPrefix + '/docs/' + docID + '/accounting_data/';
+    return resti.readAll(result, url)
   };
 };
 
@@ -169,6 +220,12 @@ var LabelsAPI_v1 = function(urlPrefix, resti) {
     return resti.readAll(result, url)
   };
 
+  this.findLabelsByName = function(name) {
+    var result = [];
+    var url = urlPrefix + '/labels?name=' + name;
+    return resti.readAll(result, url)
+  };
+
   this.createLabel = function(label) {
     var data = {
       name: label
@@ -178,19 +235,5 @@ var LabelsAPI_v1 = function(urlPrefix, resti) {
     return resti.create(result, url, data)
   };
 
-  this.joinLabelWithDoc = function(labelID, docID) {
-    var data = {
-      label_id: labelID,
-      doc_id: docID,
-    };
-    var result = {};
-    var url = urlPrefix + '/labels/docs/';
-    return resti.create(result, url, data)
-  };
-
-  this.detachLabelFromDoc = function(labelID, docID) {
-    var url = urlPrefix + '/labels/' + labelID + '/docs/' + docID;
-    return resti.remove(url)
-  };
 };
 

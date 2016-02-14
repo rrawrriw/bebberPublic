@@ -3,24 +3,22 @@
 var app = angular.module('docMa', [
   'ngRoute',
 
-  'common.controllers',
+  'ui.bootstrap',
+
   'common.services.utils',
   'common.services.users',
   'common.services.session',
   'common.filters',
+  'common.controllers',
 
-  'virtualDir.controllers',
-  'virtualDir.services.labels',
-  'virtualDir.services.docs',
   'virtualDir.services.virtualDir',
   'virtualDir.services.docMaAPI',
   'virtualDir.directives',
+  'virtualDir.controllers',
 ]);
 
-
-/*
 app.config(['$routeProvider', function($routeProvider) {
-  $routeProvider.when('/virtual_dir/:dirName/:docName', {
+  $routeProvider.when('/virtual_dir/:dirName/:dirPosition', {
     templateUrl: '/public/angular-tpls/virtualDir/detailView.html',
     controller: 'VirtualDirDetailViewCtrl'
   }).when('/new_docs', {
@@ -32,4 +30,3 @@ app.config(['$routeProvider', function($routeProvider) {
   }).otherwise('/sign_in');
 }
 ]);
-*/

@@ -3,10 +3,12 @@
 var m = angular.module('common.services.session', []);
 
 m.factory('session', [function() {
+  var d = new Date();
+  d.setDate(d.getDate() - 1);
   return {
     token: '',
     userID: '',
-    expires: undefined,
+    expires: d,
 
     new: function(token, userID, expires) {
       this.token = token;

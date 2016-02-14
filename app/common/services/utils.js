@@ -22,6 +22,10 @@ angular.module('common.services.utils', []).factory('utils', [
         $location.url('/login');
       },
 
+      go2: function(url) {
+        $location.url(url);
+      },
+
       makeMongoDBDate: function(euroDate) {
         var tmp = euroDate.split('.');
         return tmp[2] + '-' + tmp[1] + '-' + tmp[0] + 'T00:00:00Z'

@@ -23,10 +23,9 @@ m.controller('VirtualDirDetailViewCtrl', [
   '$sce',
   '$uibModal',
   'session',
-  'Doc',
-  'docNumberProposal',
+  'docMaAPI',
   'utils',
-  'Label', function($scope,
+  'virtualDir', function($scope,
     $rootScope,
     $log,
     $routeParams,
@@ -35,8 +34,9 @@ m.controller('VirtualDirDetailViewCtrl', [
     $sce,
     $uibModal,
     session,
-    Doc,
-    utils) {
+    docMaAPI,
+    utils,
+    virtualDir) {
 
     var doc = undefined;
 
@@ -46,16 +46,20 @@ m.controller('VirtualDirDetailViewCtrl', [
       }
 
       // Init dir
-      $scope.dirName = $routerParams.dirName;
-      $scope.dirPos = $routerParams.dirPos;
+      $scope.dirName = $routeParams.dirName;
+      $scope.dirPos = $routeParams.dirPosition;
+      console.log($scope.dirName);
+      console.log($scope.dirPos);
       try {
         $scope.dir = virtualDir.readDir($scope.dirName)
       } catch ( e ) {
+        $log.error(e);
         utils.globalErrMsg('Cannot load documents');
       }
 
       doc = $scope.dir[$scope.dirPos];
 
+      console.log(doc);
       // Hier werden alle Daten für das Template zusammengefasst.
       // Die in diesem Objekt definierten Attribute werden als
       // ng-model für die Templates verwendet. Ändern der Benutzer
@@ -64,32 +68,41 @@ m.controller('VirtualDirDetailViewCtrl', [
       // daraufhin mit diesem Objekt abgeglichen. So kann man diese
       // Objekt an verschieden EventHandler übergeben diese können
       // dan direkt dieses Objekt manipulieren. 
-      // Man auch ein Proxy-Objekt nennen.
+      // Man könnte es auch ein Proxy-Objekt nennen.
       $scope.docData = {
         id: doc.id,
         name: doc.name,
         barcode: doc.barcode,
-        dateOfScan: doc.dateOfScan,
-        dateOfReceipt: doc.dateOfReceipt,
-        labels: doc.readLabels(), // ref auf Array
-        accountData: doc.readAccountData(), // ref auf Obj 
-        docNumbers: doc.readDocNumbers(), // ref auf Array
+        dateOfScan: doc.date_of_scan,
+        dateOfReceipt: doc.date_of_receipt,
+        note: doc.note,
+        labels: docMaAPI.docs.readAllLabels(doc.id), // ref auf Array
+        accountData: docMaAPI.docs.readAccountData(doc.id), // ref auf Obj 
+        docNumbers: docMaAPI.docs.readAllDocNumbers(doc.id), // ref auf Array
       };
 
-      $scope.docAction = new DocEventHandler(
-        utils, Doc, doc, $scope.docData, $scope.dirPos
+      $scope.docsCtrl = new DocEventHandlers(
+        $log, $timeout, utils, docMaAPI, doc, $scope.docData,
+        $scope.dir, $scope.dirName, $scope.dirPos
+      );
+      $scope.docNumbersCtrl = new DocNumbersEventHandlers(
+        $log, $timeout, docMaAPI, utils, $scope.docData
+      );
+      $scope.accountDataCtrl = new AccountDataEventHandlers(
+        $log, $timeout, docMaAPI, utils, $scope.docData
       );
 
       // Load labels for label selection
-      $http.get('/v2/labels').then(function(resp) {
-        $scope.labelSelect = new LabelSelectEventHandler(
-          resp.data, Label, doc, $scope.docData
+      docMaAPI.labels.readAllLabels().$promise.then(function(resp) {
+        $scope.labelSelect = new LabelSelectEventHandlers(
+          docMaAPI, utils, resp.data, doc, $scope.docData
         );
-      }).catch(function() {
+      }).catch(function(resp) {
+        $log.error(resp.data.message);
         utils.globalErrMsg('Cannot load labels');
       });
 
-      $scope.pdf.setup($scope.docName);
+      $scope.pdf.setup($scope.docData.name);
 
     }
 
@@ -100,43 +113,33 @@ m.controller('VirtualDirDetailViewCtrl', [
         open: function() {
           this.modal = $uibModal.open({
             animation: true,
-            templateUrl: '/public/angular-tpls/changeDocNameModal.html',
+            templateUrl: '/public/angular-tpls/virtualDir/changeDocNameModal.html',
             controller: 'changeDocNameModalCtrl',
             resolve: {
-              doc: function() {
-                return doc;
-              },
-              docName: function() {
-                return $scope.docData.name;
+              docData: function() {
+                return $scope.docData;
               },
             },
           });
 
           this.modal.result.then(function(newName) {
-            $scope.docData.name = newName;
+            doc.name = newName;
           });
-
         },
       },
 
       accountingData: {
         modal: undefined,
         open: function() {
-          this.modal = $modal.open({
+          this.modal = $uibModal.open({
             animation: true,
-            templateUrl: '/public/angular-tpls/accProcessModal.html',
+            templateUrl: '/public/angular-tpls/virtualDir/accountingDataModal.html',
             windowClass: 'accProcess-modal',
-            contorller: 'showAccountingDataCtrl',
+            controller: 'showAccountingDataCtrl',
             resolve: {
-              doc: function() {
-                return doc;
+              docData: function() {
+                return $scope.docData;
               },
-              accountData: function() {
-                return $scope.docData.accountData;
-              },
-              accountNumbers: function() {
-                return $scope.docData.accountNumbers;
-              }
             },
           });
 
@@ -148,7 +151,7 @@ m.controller('VirtualDirDetailViewCtrl', [
         modal: undefined,
         open: function() {
 
-          this.modal = $modal.open({
+          this.modal = $uibModal.open({
             animation: true,
             templateUrl: '/public/angular-tpls/docNumberProposalModal.html',
             controller: 'docNumberProposalModalCtrl',
@@ -243,7 +246,7 @@ m.controller('VirtualDirDetailViewCtrl', [
       url: '',
       setup: function(docName) {
         var that = this;
-        this.url = $sce.trustAsResourceUrl('/pdfviewer/viewer.html?file=/ReadDocFile/' + docName);
+        this.url = $sce.trustAsResourceUrl('/pdfviewer/viewer.html?file=/docfile/' + docName);
       }
     }
 
@@ -260,56 +263,66 @@ m.controller('VirtualDirDetailViewCtrl', [
 
 // Find all docs with label Neu. Then open virtual dir.
 m.controller('VirtualDirFindNewDocsCtrl', [
+  '$log',
   '$scope',
   '$rootScope',
-  'docTools',
+  'virtualDir',
+  'docMaAPI',
   'utils', function(
+    $log,
     $scope,
     $rootScope,
     virtualDir,
-    docTools,
+    docMaAPI,
     utils) {
 
-    var labels = docTools.findDocsByLabel('Neu')
+    var labels = docMaAPI.labels.findLabelsByName('Neu')
 
-    labels.$promise
-      .then(function(resp) {
-        virtualDir.mkdir('Neu', labels);
-        $rootScope.searchResultLength = labels.length;
-        utils.go2('/virtual_dir/Neu/0');
-      })
-      .catch(function(response) {
-        utils.globalErrMsg(response.Msg);
-      });
+    labels.$promise.then(function(resp) {
+      if (labels.length !== 1) {
+        throw new Error('Error while loading Neu label');
+      }
+
+      return docMaAPI.docs.findDocsByLabel(labels[0].id).$promise;
+    }).then(function(resp) {
+      var docs = resp.data
+
+      virtualDir.mkdir('Neu', docs);
+      $rootScope.searchResultLength = labels.length;
+
+      utils.go2('/virtual_dir/Neu/0');
+    }).catch(function(resp) {
+      $log.error(resp.data.message);
+      utils.globalErrMsg('Cannot load Neu label');
+    });
 
   }
 ]);
 
 m.controller('changeDocNameModalCtrl', [
+  '$log',
   '$scope',
   '$uibModalInstance',
-  'Doc',
+  'docMaAPI',
   'utils',
-  'docName', function($scope,
-    $modalInstance,
-    Doc,
+  'docData', function($log,
+    $scope,
+    $uibModalInstance,
+    docMaAPI,
     utils,
-    docName) {
+    docData) {
 
-    $scope.newDocName = docName;
-    $scope.opened = true;
+    $scope.newDocName = docData.name;
 
     $scope.cancel = function() {
       $uibModalInstance.dismiss('cancel');
     };
 
     $scope.save = function() {
-      var change = {
-        name: $scope.newDocName
-      };
-
-      Doc.update(change, new Doc()).then(function() {
-        $modalInstance.close($scope.newDocName);
+      var name = $scope.newDocName;
+      docMaAPI.docs.renameDoc(docData.id, name).$promise.then(function() {
+        docData.name = name;
+        $uibModalInstance.close(name);
       }).catch(function(resp) {
         $log.error(resp.data.message);
         utils.globalErrMsg('Couldn\'t change document name');
@@ -327,19 +340,19 @@ m.controller('changeDocNameModalCtrl', [
 ]);
 
 m.controller('showAccountingDataCtrl', [
-  '$scope',
   '$log',
+  '$scope',
   '$uibModalInstance',
+  'docMaAPI',
   'utils',
-  'doc',
-  'AccountData',
-  'AccountNumbers', function($scope,
+  'docData', function($log,
+    $scope,
     $uibModalInstance,
-    doc,
-    AccountData,
-    AccountNumbers) {
+    docMaAPI,
+    utils,
+    docData) {
 
-    $scope.accountingData = doc.readAccountingData(); // ref to array
+    $scope.accountingData = docMaAPI.docs.readAccountingData(docData.id); // ref to array
     $scope.accountingData.$promise.catch(function(resp) {
       $log.error(resp.data.message);
       utils.globalErrMsg('Cannot load accounting data');
@@ -395,79 +408,79 @@ m.controller('docNumberProposalModalCtrl', [
 
 var PositionCounter = function(max, startPos) {
   max = max - 1;
-  var curr = -1;
-  var last = -1;
+  this.curr = -1;
+  this.last = -1;
 
   if (angular.isDefined(startPos)) {
-    curr = startPos;
+    this.curr = startPos;
     if ((startPos - 1) < 0) {
-      last = max
+      this.last = max
     } else if ((startPos + 1) > max) {
-      last = 0;
+      this.last = 0;
     } else {
-      last = startPos - 1;
+      this.last = startPos - 1;
     }
   }
 
   this.up = function() {
-    last = curr;
-    curr--;
+    this.last = this.curr;
+    this.curr--;
 
-    if (curr < 0) {
-      curr = max;
+    if (this.curr < 0) {
+      this.curr = max;
     }
 
-    return curr;
+    return this.curr;
 
   };
 
   this.down = function() {
-    last = curr;
-    curr++;
+    this.last = this.curr;
+    this.curr++;
 
-    if (curr > max) {
-      curr = 0;
+    if (this.curr > max) {
+      this.curr = 0;
     }
 
-    return curr;
+    return this.curr;
 
   };
 };
 
-var LabelSelectEventHandler = function(labels, Label, doc, docData) {
+var LabelSelectEventHandlers = function(docMaAPI, utils, labels, doc, docData) {
   var pos = new PositionCounter(labels.length);
 
   // Set all label selected attributes to false
-  var unselectAll = function(labels) {
-    return _.map(labels, function(val, index) {
-      val.selected = false;
+  var unselectAll = function(ll) {
+    return _.map(ll, function(v, i, l) {
+      v.selected = false;
+      return v;
     })
   };
 
   // Unselect one label entry
-  var unselect = function(labels, pos) {
-    if (pos < 0 || pos > (labels.length - 1)) {
-      return
+  var unselect = function(l, pos) {
+    if (pos < 0 || pos > (l.length - 1)) {
+      return l
     }
-    labels[pos].selected = false;
+    l[pos].selected = false;
 
-    return labels
+    return l;
   };
 
-  var select = function(labels, pos) {
-    console.log("select pos", pos);
-    labels[pos].selected = true;
+  var select = function(l, pos) {
+    l[pos].selected = true;
+
+    return l
   };
 
-  var filterLabels = function(labels, query) {
-    return _.filter(labels, function(val, index) {
-      if (val.indexOf(query) !== -1) {
-        return val
-      }
+  var filterLabels = function(l, query) {
+    return _.filter(l, function(val) {
+      return (val.name.indexOf(query) !== -1)
     });
   };
 
-  this.isHidden = false;
+  this.isHidden = true;
   this.input = "";
   this.labels = labels;
 
@@ -491,23 +504,26 @@ var LabelSelectEventHandler = function(labels, Label, doc, docData) {
   this.joinLabel = function(pos) {
     if (pos < 0 || pos > (this.labels.length - 1)) {
       console.log('Ask if ' + this.input + ' should be created!');
-      var label = new Label({
-        name: this.labels[pos.curr]
+      docMaAPI.createLabel(this.input).$promise.then(function(resp) {
+        return docMaAPI.docs.joinLabel(doc.id, resp.data.id).$promise;
+      }).catch(function(resp) {
+        utils.globalErrMsg('Cannot join or create label ' + this.input);
+        $log.error(resp.data.message);
       });
-      label.save();
-      return
+    } else {
+      var label = this.labels[pos];
+      docMaAPI.docs.joinLabel(doc.id, label.id).$promise.then(function() {
+        docData.labels.push(label);
+        docData.labels.sort();
+      }).catch(function(resp) {
+        utils.globalErrMsg('Cannot join label with doc, please try it again');
+        $log.error(resp.data.message);
+      });;
     }
-
-    doc.joinLabel(label).then(function() {
-      docData.labels.push(label);
-      docData.labels.sort();
-    });
-
   };
 
   // Filter label list
   this.keydown = function(e) {
-    console.log(e.which);
     switch (e.which) {
       // up
       case 38:
@@ -529,7 +545,7 @@ var LabelSelectEventHandler = function(labels, Label, doc, docData) {
       // reset filter labels
       default:
         console.log("input ", this.input);
-        this.labels = filterLabels(this.labels, function() {});
+        this.labels = filterLabels(labels, this.input);
         this.labels = unselectAll(this.labels);
         pos = new PositionCounter(this.labels.length);
         break;
@@ -538,78 +554,108 @@ var LabelSelectEventHandler = function(labels, Label, doc, docData) {
 
 }
 
-var DocEventHandler = function(utils, Doc, doc, docData, dir, dirPos) {
+var DocEventHandlers = function($log, $timeout, utils, docMaAPI, doc, docData, dir, dirName, dirPos) {
   var posCount = new PositionCounter(dir.length, dirPos);
 
-  this.glowGreen = {
-    accData: false,
-    dateOfReceipt: false,
-  }
+  this.glowGreen = false;
 
   this.nextDoc = function() {
-    posCount.down();
-    utils.go2('/virtual_dir/' + dir + '/' + posCount.curr);
+    var curr = posCount.down();
+    utils.go2('/virtual_dir/' + dirName + '/' + curr);
   }
 
   this.prevDoc = function() {
-    posCount.up();
-    utils.go2('/virtual_dir/' + dir + '/' + posCount.curr);
+    var curr = posCount.up();
+    utils.go2('/virtual_dir/' + dirName + '/' + curr);
   }
 
-  this.removeLabel = function(labelID) {};
+  this.removeLabel = function(labelID) {
+    docMaAPI.docs.detachLabel(doc.id, labelID).then(function(resp) {
+      docData.labels = _.filter(docData.labels, function(v) {
+        return (v.id != labelID);
+      });
+    }).catch(function(resp) {
+      $log.error(resp.data.message);
+      utils.globalErrMsg('Cannot remove label');
+    })
+  };
 
-  this.saveDateOfReceipt = function() {
-    var date = docData.dateOfReceipt;
+  this.updateDoc = function() {
+    var that = this;
     var change = {
-      dateOfReceipt: date,
+      name: docData.name,
+      barcode: docData.barcode,
+      date_of_scan: docData.dateOfScan,
+      date_of_receipt: docData.dateOfReceipt,
+      note: docData.note,
     };
-    Doc.update(change, doc).then(function() {
-      this.glowGreen.dateOfReceipt = true;
+    docMaAPI.docs.updateDoc(doc.id, change).$promise.then(function() {
+      that.glowGreen = true;
       $timeout(function() {
-        this.glowGreen.dateOfReceipt = false;
+        that.glowGreen = false;
       }, 2000);
     }).catch(function(resp) {
-      utils.globalErrMessage('Cannot update date of receipt');
+      utils.globalErrMsg('Cannot update doc, please try it again');
       $log.error(resp.data.message);
     });
 
   }
 
-  this.saveNote = function() {
-    var change = {
-      note: docData.note,
-    };
-    Doc.update(change, doc).then(function() {
-      this.noteGlowGreen = true;
-      $timeout(function() {
-        this.noteGlowGreen = false;
-      }, 2000);
-    }).catch(function(response) {
-      utils.globalErrMsg(response);
-    });
-  }
+};
 
-  this.saveAccountData = function() {
-    var accNumber = parseInt(docData.accountData.accNumber);
-    var from = docData.accountData.from;
-    var to = docData.accountData.to;
+var AccountDataEventHandlers = function($log, $timeout, docMaAPI, utils, docData) {
+  this.glowGreen = false;
+
+  this.save = function() {
+    var that = this;
+    var accNumber = parseInt(docData.accountData.account_number);
+    var from = docData.accountData.period_from;
+    var to = docData.accountData.period_to;
     var accData = {
-      accNumber: accNumber,
-      docPeriod: {
-        from: from,
-        to: to,
-      }
+      account_number: accNumber,
+      period_from: from,
+      period_to: to,
     }
 
-    doc.saveAccountData(accData).then(function() {
-      $scope.glowGreen.accData = true;
+    docMaAPI.docs.updateAccountData(docData.id, accData).$promise.then(function() {
+      that.glowGreen = true;
       $timeout(function() {
-        $scope.glowGreen.accData = false;
+        that.glowGreen = false;
       }, 2000);
-    }).catch(function(response) {
-      utils.globalErrMsg(response.Msg);
+    }).catch(function(resp) {
+      $log.error(resp.data.message);
+      utils.globalErrMsg('Cannot update account data, please try it again');
     });
   }
 
-};
+}
+
+var DocNumbersEventHandlers = function($log, $timeout, docMaAPI, utils, docData) {
+  var that = this;
+  this.input = "";
+
+  this.append = function() {
+    _.each(this.input, function(v, k, l) {
+      docMaAPI.docs.createDocNumber(docData.id, v).$promise.then(function(resp) {
+        console.log(resp.data);
+        docData.docNumbers.push(resp.data);
+        that.input = "";
+      }).catch(function(resp) {
+        $log.error(resp.data.message);
+        utils.globalErrMsg('Cannot append document number');
+      });
+    });
+  };
+
+  this.remove = function(number) {
+    docMaAPI.docs.deleteDocNumber(docData.id, number).then(function(resp) {
+      docData.docNumbers = _.filter(docData.docNumbers, function(v) {
+        return (v.number != number);
+      });
+    }).catch(function(resp) {
+      $log.error(resp.data.message);
+      utils.globalErrMsg('Cannot remove document number');
+    });
+  };
+}
 
