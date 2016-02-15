@@ -212,10 +212,20 @@ span.tag {
   z-index: 200;
 }
 
-#label-select .input-group {
-  width: 50%;
+.doc-labels {
+  overflow: hidden;
+	padding-bottom: 15px;
 }
 
+#section-labels {
+  margin-top: 50px;
+}
+
+
+#label-select .input-group {
+	margin-left: 10px;
+  width: 50%;
+}
 
 #label-list {
   background: #fff;
@@ -224,7 +234,10 @@ span.tag {
   box-shadow: 0 2px 4px rgba(0,0,0,0.2);
     -webkit-box-shadow: 0 2px 4px rgba(0,0,0,0.2);
   cursor: default;
-  width: 60%
+  width: 60%;
+	margin-left: 15px;
+	position: absolute;
+	z-index: 100;
 }
 
 #label-list .selected {
@@ -308,7 +321,7 @@ ul#labels li {
   cursor: pointer;
 }
 
-#docInfos table td {
+#doc-infos table td {
   border-top: none;
   border-bottom: 1px solid #ddd;
 }
@@ -330,14 +343,6 @@ ul#labels li {
   background-color: #f8f8f8;
   padding-top: 15px;
   margin-bottom: 25px;
-}
-
-.docdata-ctrls {
-  overflow: hidden;
-}
-
-#section-labels {
-  margin-top: 50px;
 }
 
 #docnumbers {

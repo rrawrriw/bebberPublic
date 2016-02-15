@@ -48,8 +48,6 @@ m.controller('VirtualDirDetailViewCtrl', [
       // Init dir
       $scope.dirName = $routeParams.dirName;
       $scope.dirPos = $routeParams.dirPosition;
-      console.log($scope.dirName);
-      console.log($scope.dirPos);
       try {
         $scope.dir = virtualDir.readDir($scope.dirName)
       } catch ( e ) {
@@ -59,7 +57,6 @@ m.controller('VirtualDirDetailViewCtrl', [
 
       doc = $scope.dir[$scope.dirPos];
 
-      console.log(doc);
       // Hier werden alle Daten für das Template zusammengefasst.
       // Die in diesem Objekt definierten Attribute werden als
       // ng-model für die Templates verwendet. Ändern der Benutzer
@@ -475,7 +472,10 @@ var LabelSelectEventHandlers = function(docMaAPI, utils, labels, doc, docData) {
   };
 
   var filterLabels = function(l, query) {
+    console.log('--> ', l);
+    console.log('Q-> ', query);
     return _.filter(l, function(val) {
+      console.log(val);
       return (val.name.indexOf(query) !== -1)
     });
   };
@@ -502,12 +502,30 @@ var LabelSelectEventHandlers = function(docMaAPI, utils, labels, doc, docData) {
 
 
   this.joinLabel = function(pos) {
+    var that = this;
     if (pos < 0 || pos > (this.labels.length - 1)) {
       console.log('Ask if ' + this.input + ' should be created!');
-      docMaAPI.createLabel(this.input).$promise.then(function(resp) {
+
+      var d = confirm('Should label be created' + this.input);
+      if (!d) {
+        return
+      }
+
+      var newLabel = this.input;
+      docMaAPI.labels.createLabel(newLabel).$promise.then(function(resp) {
         return docMaAPI.docs.joinLabel(doc.id, resp.data.id).$promise;
+      }).then(function(resp) {
+        var label = {
+          id: resp.data.label_id,
+          name: newLabel
+        };
+        docData.labels.push(label);
+        docData.labels.sort();
+
+        that.labels.push(label);
+        that.labels.sort();
       }).catch(function(resp) {
-        utils.globalErrMsg('Cannot join or create label ' + this.input);
+        utils.globalErrMsg('Cannot join or create label ' + newLabel);
         $log.error(resp.data.message);
       });
     } else {
@@ -544,8 +562,9 @@ var LabelSelectEventHandlers = function(docMaAPI, utils, labels, doc, docData) {
         break;
       // reset filter labels
       default:
-        console.log("input ", this.input);
         this.labels = filterLabels(labels, this.input);
+        console.log(labels);
+        console.log(this.labels);
         this.labels = unselectAll(this.labels);
         pos = new PositionCounter(this.labels.length);
         break;

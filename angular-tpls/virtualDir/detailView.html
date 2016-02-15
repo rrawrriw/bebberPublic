@@ -34,17 +34,16 @@
             </span>
           </li>
         </ul>
-        <div class="docdata-ctrls">
+        <div class="doc-labels">
 
 					<div id="label-select">
 						<div class="input-group">
 							<div class="input-group-btn">
-								<input type="text" class="form-control" placeholder="Search for..."
+								<input id="label-input" type="text" class="form-control" placeholder="Search for..."
                         ng-model="labelSelect.input"
                         ng-click="labelSelect.open()"
                         ng-keydown="labelSelect.keydown($event)"
                         ng-blur="labelSelect.close()">
-								<button class="btn btn-default" type="button">list</button>
 								<button class="btn btn-default" type="button">add</button>
 							</div>
 						</div>
@@ -58,14 +57,10 @@
 						</ul>
 					</div>
 
-          <!--
-          <input id="labels-input" type="text" ng-model="labels.input" ng-keypress="labels.keyEvent($event)" ng-list>
-          <span class="glyphicon glyphicon-plus append-label" ng-click="labels.save()"></span>
-          -->
         </div>
       </div>
     </div>
-    <div id="docInfos">
+    <div id="doc-infos">
       <header class="section-head">Allgemein</header>
       <table class="table">
         <tbody>
