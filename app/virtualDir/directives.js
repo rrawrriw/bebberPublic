@@ -25,26 +25,45 @@ m.directive('dateProxy', ['utils', function(utils) {
 m.directive('shortcuts', [
   '$window',
   '$log',
-  'utils', function($window, $log, utils) {
+  'docMaAPI',
+  'utils', function($window, $log, docMaAPI, utils) {
 
-    var removeLabel = function(doc, label, resp) {
-      label = _.filterWhere(scope.docData.labels, {
-        name: label
+    var labels = docMaAPI.labels.readAllLabels()
+    labels.$promise.catch(function(resp) {
+      $log.error(resp.data.message);
+      utils.globalErrMsg('Cannot load labels');
+    });
+
+    var detachLabel = function(docData, name) {
+      var label = _.findWhere(labels, {
+        name: name,
       });
 
-      docTool.removeLable(doc.id, label.id).catch(function(resp) {
-        utils.globalErrMsg('Cannot remove Neu label');
+      docMaAPI.docs.detachLabel(docData.id, label.id).then(function() {
+        docData.labels = _.filter(docData.labels, function(v) {
+          return (v.name !== label.name)
+        });
+      }).catch(function(resp) {
+        utils.globalErrMsg('Cannot remove ' + name + ' label');
         $log.error(resp.data.message);
-        $scope.docData.labels = docDataTools.appendLabel(
-          $scope.docData.labels, label
-        );
       });
     };
 
+    var joinLabel = function(docData, name) {
+      var label = _.findWhere(labels, {
+        name: name,
+      });
+
+      docMaAPI.docs.joinLabel(docData.id, label.id).$promise.then(function() {
+        docData.labels.push(label);
+      }).catch(function(resp) {
+        utils.globalErrMsg('Cannot join ' + name + ' label');
+        $log.error(resp.data.message);
+      });
+    }
+
     return {
       link: function(scope, element, attr) {
-
-        var doc = {};
 
         angular.element($window).on('keyup', function(e) {
 
@@ -59,45 +78,38 @@ m.directive('shortcuts', [
           }
 
           switch (e.which) {
+            // key <-
             case 37:
-              scope.docAction.prevDoc();
+              scope.docsCtrl.prevDoc();
               scope.$apply();
               break;
+            // key ->
             case 39:
-              scope.docAction.nextDoc();
+              scope.docsCtrl.nextDoc();
               scope.$apply();
               break;
+            // key a
             case 65:
-              doc.joinLabel('Inbox-Buchhaltung').catch(function(resp) {
-                utils.globalErrMsg('Cannot append Inbox-Buchhaltung label');
-                $log.error(resp.data.message);
-                $scope.docData.labels.push('Inbox-Buchhaltung');
-              });
+              joinLabel(scope.docData, 'Buchungsbeleg');
+              detachLabel(scope.docData, 'Inbox-Buchhaltung');
               break;
+            // key b
             case 66:
-              doc.joinLabel('Inbox-Bruno').catch(function(resp) {
-                g.globalErrMsg(response.Msg);
-                $scope.docData.labels = docDataTools.appendLabel(
-                  $scope.docData.labels, label
-                );
-              });
-              removeLabel(doc, 'Neu', resp);
+              joinLabel(scope.docData, 'Inbox-Bruno');
+              detachLabel(scope.docData, 'Neu');
               break;
+            // key m
             case 77:
-              docs.appendLabels(docName, ['Inbox-Martin'])
-                .catch(function(response) {
-                  g.globalErrMsg(response.Msg);
-                });
-              removeNewLabel(docName, docs, g);
+              joinLabel(scope.docData, 'Inbox-Martin');
+              detachLabel(scope.docData, 'Neu');
               break;
+            // key q
             case 81:
               scope.modals.docNumberProposal.open();
               break;
+            // key r
             case 82:
-              docs.removeLabel(docName, 'Neu')
-                .catch(function(response) {
-                  g.globalErrMsg(response.Msg);
-                });
+              detachLabel(scope.docData, 'Neu');
               break;
             default:
               break;
