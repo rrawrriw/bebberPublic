@@ -451,8 +451,9 @@ var LabelSelectEventHandlers = function($log, docMaAPI, utils, labels, docData) 
   };
 
   var filterLabels = function(l, query) {
+    var re = new RegExp(query, 'i');
     return _.filter(l, function(val) {
-      return (val.name.indexOf(query) !== -1)
+      return val.name.match(re);
     });
   };
 

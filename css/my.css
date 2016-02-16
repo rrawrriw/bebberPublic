@@ -239,7 +239,7 @@ span.tag {
 	position: absolute;
 	z-index: 100;
 	overflow-y: scroll;
-	height: 30%;
+	max-height: 30%;
 }
 
 #label-list .selected {
