@@ -53,7 +53,7 @@
 							<li role="presenter" 
                   ng-repeat="label in labelSelect.labels"
                   ng-class="{selected: label.selected}"
-                  ng-mouseover="label.selected=true"
+                  ng-mouseover="label.selected=true;labelSelect.input=label.name"
                   ng-mouseleave="label.selected=false"
                   ng-click="labelSelect.joinLabel()">{{ label.name }}</li>
 						</ul>

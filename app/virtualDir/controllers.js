@@ -348,9 +348,8 @@ m.controller('docNumberProposalModalCtrl', [
         var label = _.find(labels, function(v) {
           return v.name === 'Buchungsbeleg';
         });
-        // If appending fails 
         docMaAPI.docs.joinLabel(docData.id, label.id).$promise.then(function() {
-          docData.labels.push(label.name);
+          docData.labels.push(label);
           docData.labels.sort();
         }).catch(function(resp) {
           utils.globalErrMsg('Couldn\'t join ' + label.name + ' label');
@@ -550,6 +549,10 @@ var LabelSelectEventHandlers = function($log, docMaAPI, utils, labels, docData) 
         this.joinLabel();
         break;
       // reset filter labels
+      case 27:
+        this.close();
+        angular.element('#label-input')[0].blur();
+        break;
       default:
         this.labels = filterLabels(labels, this.input);
         this.labels = unselectAll(this.labels);
