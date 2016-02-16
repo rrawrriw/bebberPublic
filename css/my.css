@@ -238,6 +238,8 @@ span.tag {
 	margin-left: 15px;
 	position: absolute;
 	z-index: 100;
+	overflow-y: scroll;
+	height: 30%;
 }
 
 #label-list .selected {

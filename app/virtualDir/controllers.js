@@ -39,6 +39,7 @@ m.controller('VirtualDirDetailViewCtrl', [
     virtualDir) {
 
     var doc = undefined;
+    var labels = undefined;
 
     var setupCtrl = function() {
       if (session.isExpired()) {
@@ -90,9 +91,10 @@ m.controller('VirtualDirDetailViewCtrl', [
       );
 
       // Load labels for label selection
-      docMaAPI.labels.readAllLabels().$promise.then(function(resp) {
+      labels = docMaAPI.labels.readAllLabels();
+      labels.$promise.then(function(resp) {
         $scope.labelSelect = new LabelSelectEventHandlers(
-          docMaAPI, utils, resp.data, doc, $scope.docData
+          $log, docMaAPI, utils, resp.data, $scope.docData
         );
       }).catch(function(resp) {
         $log.error(resp.data.message);
@@ -145,98 +147,23 @@ m.controller('VirtualDirDetailViewCtrl', [
       },
 
       docNumberProposal: {
-        modal: undefined,
         open: function() {
-
-          this.modal = $uibModal.open({
+          $uibModal.open({
             animation: true,
-            templateUrl: '/public/angular-tpls/docNumberProposalModal.html',
+            templateUrl: '/public/angular-tpls/virtualDir/docNumberProposalModal.html',
             controller: 'docNumberProposalModalCtrl',
-          });
-
-          this.modal.result.then(function(proposal) {
-            var proposalStr = String(proposal);
-            doc.appendDocNumber(proposalStr).catch(function(resp) {
-              utils.globalErrMsg('Couldn\'t append new document number');
-            })
-
-            doc.removeLabel('Inbox-Buchhaltung').then(function() {
-              // If Inbox-Buchhaltung successfully removed,
-              // remove label from docData.labels as well.
-              // It would be possible to read labels
-              // from server (doc.readLabels()) but I think we
-              // can safe this response time and just remove
-              // it directly from list.
-              $scope.docData.labels = _.filter(
-                $scope.docData.labels, function(val, index) {
-                  if (val.name !== 'Inbox-Buchhaltung') {
-                    return val;
-                  }
-                })
-            }).catch(function(resp) {
-              utils.globalErrMsg('Couldn\'t remove Inbox-Buchhaltung label');
-              $log.error(resp.data.message);
-            });
-
-            var result = _.find(
-              $scope.docData.labels, function(v) {
-                return v === 'Buchungsbeleg';
-              });
-            if (!angular.isDefined(result)) {
-              // If appending fails 
-              doc.appendLabel('Buchungsbeleg').then(function() {
-                $scope.docData.labels.push('Buchungsbeleg');
-                $scope.docData.labels.sort();
-              }).catch(function(resp) {
-                utils.globalErrMsg('Couldn\'t append Buchungsbeleg label');
-                $log.error(resp.data.message);
-              });
-            }
-
-            var proposalInt = parseInt(proposal);
-            if (!isNaN(proposalInt)) {
-              docNumberProposal.save(proposalInt).catch(function(resp) {
-                utils.globalErrMsg('Cannot update document number proposal');
-                $log.error(resp.data.message);
-              });
-            }
-
+            resolve: {
+              docData: function() {
+                return $scope.docData;
+              },
+              labels: function() {
+                return labels;
+              },
+            },
           });
         },
       },
 
-    };
-
-    $scope.docNumbers = {
-      input: [],
-      save: function() {
-        var docName = $scope.doc.Name;
-        var that = this;
-        doc.appendDocNumbers(this.input).then(function(resp) {
-          _.each(that.input, function(val, index, list) {
-            $scope.docData.docNumbers.push(val);
-          });
-
-          that.input = [];
-        }).catch(function(resp) {
-          $log.error(resp.data.message);
-          utils.globalErrMsg('Couldn\'t append document number(s)');
-        });
-      },
-
-      keyEvent: function(keyEvent) {
-        // hit enter
-        if (keyEvent.which === 13) {
-          this.save()
-        }
-      },
-
-      remove: function(number) {
-        doc.removeDocNumber(number).catch(function(resp) {
-          $log.error(resp.data.message);
-          utils.globalErrMsg('Couldn\'t remove document number');
-        });
-      }
     };
 
     $scope.pdf = {
@@ -362,34 +289,89 @@ m.controller('showAccountingDataCtrl', [
 ]);
 
 m.controller('docNumberProposalModalCtrl', [
+  '$log',
   '$scope',
   '$uibModalInstance',
-  'DocNumberProposal',
-  'utils', function($scope,
-    $modalInstance,
-    DocNumberProposal,
-    utils) {
+  'docMaAPI',
+  'utils',
+  'docData',
+  'labels', function($log,
+    $scope,
+    $uibModalInstance,
+    docMaAPI,
+    utils,
+    docData,
+    labels) {
 
-    var startCtrl = function() {
-      $scope.docNumberProposal.next()
-        .then(function(response) {
-          $scope.proposal = response.Proposal;
-          $scope.opened = true;
-        })
-        .catch(function(response) {
-          utils.globalErrMsg(response.Msg);
-        });
-    }
+    // due to focus-me
+    $scope.opened = true;
 
-    $scope.proposal = undefined;
-    $scope.docNumberProposal = DocNumberProposal;
+    $scope.proposal = docMaAPI.docNumberProposals.next()
+    $scope.proposal.$promise.catch(function(resp) {
+      $log.error(resp.data.message)
+      utils.globalErrMsg('Cannot load document number proposal');
+    });
 
     $scope.cancel = function() {
-      $modalInstance.dismiss('cancel');
+      $uibModalInstance.dismiss('cancel');
     };
 
     $scope.save = function() {
-      $modalInstance.close($scope.proposal);
+      var proposalStr = String($scope.proposal.value);
+      docMaAPI.docs.createDocNumber(docData.id, proposalStr).$promise.then(function() {
+        var docNumber = {
+          doc_id: docData.id,
+          number: $scope.proposal.value,
+        };
+        docData.docNumbers.push(docNumber);
+
+        var label = _.find(labels, function(v) {
+          return v.name === 'Inbox-Buchhaltung';
+        });
+
+        $uibModalInstance.close(docNumber);
+        return docMaAPI.docs.detachLabel(docData.id, label.id);
+      }).then(function() {
+        docData.labels = _.filter(
+          docData.labels, function(val, index) {
+            return (val.name !== 'Inbox-Buchhaltung')
+          })
+      }).catch(function(resp) {
+        $log.error(resp.data.message);
+        utils.globalErrMsg('Couldn\'t append new document number');
+      })
+
+      var tmp = _.find(docData.labels, function(v) {
+        return v.name === 'Buchungsbeleg';
+      });
+      if (!angular.isDefined(tmp)) {
+        var label = _.find(labels, function(v) {
+          return v.name === 'Buchungsbeleg';
+        });
+        // If appending fails 
+        docMaAPI.docs.joinLabel(docData.id, label.id).$promise.then(function() {
+          docData.labels.push(label.name);
+          docData.labels.sort();
+        }).catch(function(resp) {
+          utils.globalErrMsg('Couldn\'t join ' + label.name + ' label');
+          $log.error(resp.data.message);
+        });
+      }
+
+      // Only store proposal when it is a number but then
+      // update due to database table with the string value
+      var proposalInt = parseInt($scope.proposal.value);
+      if (!isNaN(proposalInt)) {
+        var change = {
+          name: "docNumberProposal",
+          value: $scope.proposal.value,
+        }
+        docMaAPI.docNumberProposals.update(change).$promise.catch(function(resp) {
+          utils.globalErrMsg('Cannot update document number proposal');
+          $log.error(resp.data.message);
+        });
+      }
+
     };
 
     $scope.keyEvents = function(keyEvent) {
@@ -397,8 +379,6 @@ m.controller('docNumberProposalModalCtrl', [
         $scope.save();
       }
     };
-
-    startCtrl();
 
   }
 ]);
@@ -444,7 +424,7 @@ var PositionCounter = function(max, startPos) {
   };
 };
 
-var LabelSelectEventHandlers = function(docMaAPI, utils, labels, doc, docData) {
+var LabelSelectEventHandlers = function($log, docMaAPI, utils, labels, docData) {
   var pos = new PositionCounter(labels.length);
 
   // Set all label selected attributes to false
@@ -472,10 +452,7 @@ var LabelSelectEventHandlers = function(docMaAPI, utils, labels, doc, docData) {
   };
 
   var filterLabels = function(l, query) {
-    console.log('--> ', l);
-    console.log('Q-> ', query);
     return _.filter(l, function(val) {
-      console.log(val);
       return (val.name.indexOf(query) !== -1)
     });
   };
@@ -501,21 +478,27 @@ var LabelSelectEventHandlers = function(docMaAPI, utils, labels, doc, docData) {
   };
 
 
-  this.joinLabel = function(pos) {
-    var that = this;
-    if (pos < 0 || pos > (this.labels.length - 1)) {
-      console.log('Ask if ' + this.input + ' should be created!');
+  this.joinLabel = function() {
+    if (this.input === '') {
+      return
+    }
 
-      var d = confirm('Should label be created' + this.input);
-      if (!d) {
+    var that = this;
+    var label = _.find(labels, function(v) {
+      return v.name === that.input
+    })
+    // Create new label 
+    if (!angular.isDefined(label)) {
+      var newLabel = this.input;
+
+      if (!confirm('Should label be created ' + newLabel)) {
         return
       }
 
-      var newLabel = this.input;
       docMaAPI.labels.createLabel(newLabel).$promise.then(function(resp) {
-        return docMaAPI.docs.joinLabel(doc.id, resp.data.id).$promise;
+        return docMaAPI.docs.joinLabel(docData.id, resp.data.id).$promise;
       }).then(function(resp) {
-        var label = {
+        label = {
           id: resp.data.label_id,
           name: newLabel
         };
@@ -524,47 +507,51 @@ var LabelSelectEventHandlers = function(docMaAPI, utils, labels, doc, docData) {
 
         that.labels.push(label);
         that.labels.sort();
+
+        that.input = '';
       }).catch(function(resp) {
         utils.globalErrMsg('Cannot join or create label ' + newLabel);
         $log.error(resp.data.message);
       });
     } else {
-      var label = this.labels[pos];
-      docMaAPI.docs.joinLabel(doc.id, label.id).$promise.then(function() {
+      // Join existing label to doc
+      docMaAPI.docs.joinLabel(docData.id, label.id).$promise.then(function() {
         docData.labels.push(label);
         docData.labels.sort();
+        that.input = '';
       }).catch(function(resp) {
         utils.globalErrMsg('Cannot join label with doc, please try it again');
         $log.error(resp.data.message);
-      });;
+      });
     }
+
   };
 
   // Filter label list
-  this.keydown = function(e) {
+  this.keyctrl = function(e) {
     switch (e.which) {
       // up
       case 38:
         pos.up();
         this.labels = unselect(this.labels, pos.last);
         this.labels = select(this.labels, pos.curr);
+        this.input = this.labels[pos.curr].name;
         break;
       // down
       case 40:
         pos.down();
         this.labels = unselect(this.labels, pos.last);
         this.labels = select(this.labels, pos.curr);
+        this.input = this.labels[pos.curr].name;
         break;
       // enter, start append process
       case 13:
         console.log(pos.curr);
-        this.joinLabel(pos.curr);
+        this.joinLabel();
         break;
       // reset filter labels
       default:
         this.labels = filterLabels(labels, this.input);
-        console.log(labels);
-        console.log(this.labels);
         this.labels = unselectAll(this.labels);
         pos = new PositionCounter(this.labels.length);
         break;
@@ -656,7 +643,6 @@ var DocNumbersEventHandlers = function($log, $timeout, docMaAPI, utils, docData)
   this.append = function() {
     _.each(this.input, function(v, k, l) {
       docMaAPI.docs.createDocNumber(docData.id, v).$promise.then(function(resp) {
-        console.log(resp.data);
         docData.docNumbers.push(resp.data);
         that.input = "";
       }).catch(function(resp) {
@@ -675,6 +661,15 @@ var DocNumbersEventHandlers = function($log, $timeout, docMaAPI, utils, docData)
       $log.error(resp.data.message);
       utils.globalErrMsg('Cannot remove document number');
     });
+  };
+
+  this.keyctrl = function(e) {
+    switch (e.which) {
+      // enter, start append process
+      case 13:
+        this.append();
+        break;
+    }
   };
 }
 

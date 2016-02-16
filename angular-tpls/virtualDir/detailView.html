@@ -42,9 +42,11 @@
 								<input id="label-input" type="text" class="form-control" placeholder="Search for..."
                         ng-model="labelSelect.input"
                         ng-click="labelSelect.open()"
-                        ng-keydown="labelSelect.keydown($event)"
+                        ng-keyup="labelSelect.keyctrl($event)"
                         ng-blur="labelSelect.close()">
-								<button class="btn btn-default" type="button">add</button>
+								<button class="btn btn-default" type="button" ng-click="labelSelect.joinLabel()">
+									<span class="glyphicon glyphicon-plus"></span>
+								</button>
 							</div>
 						</div>
 						<ul id="label-list" ng-hide="labelSelect.isHidden" role="listbox">
@@ -103,7 +105,7 @@
           </ul>
           <input type="text" id="docnumbers-input"
                  ng-model="docNumbersCtrl.input"
-								 ng-keypress="docNumbersCtrl.keyEvent($event)"
+								 ng-keypress="docNumbersCtrl.keyctrl($event)"
 								 ng-list>
           <span class="glyphicon glyphicon-plus append-docnumbers" 
 								ng-click="docNumbersCtrl.append()">
