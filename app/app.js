@@ -13,6 +13,7 @@ var app = angular.module('docMa', [
 
   'virtualDir.services.virtualDir',
   'virtualDir.services.docMaAPI',
+  'virtualDir.services.filterHistory',
   'virtualDir.directives',
   'virtualDir.controllers',
 ]);
