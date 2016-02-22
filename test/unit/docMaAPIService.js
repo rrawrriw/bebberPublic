@@ -239,6 +239,21 @@ describe('docMaAPI service', function() {
       $scope.$apply();
     });
 
+    it('should search docs', function(done) {
+      $httpBackend
+        .expectPOST('/v1/search/docs')
+        .respond(200, []);
+
+      var docs = client.search.docs({});
+      docs.$promise.then(function(resp) {
+        expect(resp.status).toBe(200);
+        done();
+      });
+
+      $httpBackend.flush();
+      $scope.$apply();
+    });
+
     it('should join label with doc', function(done) {
       var data = {
         label_id: 1,

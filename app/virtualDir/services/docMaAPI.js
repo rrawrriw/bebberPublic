@@ -7,6 +7,7 @@ m.factory('docMaAPI', ['resti', function(resti) {
     docs: new DocsAPI_v1(urlPrefix, resti),
     labels: new LabelsAPI_v1(urlPrefix, resti),
     docNumberProposals: new DocNumberProposalAPI_v1(urlPrefix, resti),
+    search: new SearchAPI_v1(urlPrefix, resti),
   }
 }
 ]);
@@ -94,6 +95,8 @@ m.factory('resti', ['$http', '$q', function($http, $q) {
     update: update,
     remove: remove,
     patch: patch,
+    $http: $http,
+    $q: $q,
   };
 }
 ]);
@@ -235,5 +238,27 @@ var LabelsAPI_v1 = function(urlPrefix, resti) {
     return resti.create(result, url, data)
   };
 
+};
+
+var SearchAPI_v1 = function(urlPrefix, resti) {
+  var readAll = function(result, url, data) {
+    result.$promise = resti.$http.post(url, data);
+    result.$promise.then(function(resp) {
+      _.each(resp.data, function(val) {
+        result.push(val)
+      });
+      return resp;
+    }, function(resp) {
+      return resti.$q.reject(resp);
+    });
+
+    return result;
+  };
+
+  this.docs = function(data) {
+    var result = [];
+    var url = urlPrefix + '/search/docs';
+    return readAll(result, url, data)
+  };
 };
 
