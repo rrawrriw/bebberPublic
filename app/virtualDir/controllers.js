@@ -15,6 +15,8 @@ var m = angular.module('virtualDir.controllers', []);
 // Verzeichnisnamen wird aus dem VirtualDir Service geladen. 
 m.controller('VirtualDirDetailViewCtrl', [
   '$scope',
+  '$location',
+  '$route',
   '$rootScope',
   '$log',
   '$routeParams',
@@ -24,8 +26,11 @@ m.controller('VirtualDirDetailViewCtrl', [
   '$uibModal',
   'session',
   'docMaAPI',
+  'filterHistory',
   'utils',
   'virtualDir', function($scope,
+    $location,
+    $route,
     $rootScope,
     $log,
     $routeParams,
@@ -35,6 +40,7 @@ m.controller('VirtualDirDetailViewCtrl', [
     $uibModal,
     session,
     docMaAPI,
+    filterHistory,
     utils,
     virtualDir) {
 
@@ -71,13 +77,14 @@ m.controller('VirtualDirDetailViewCtrl', [
         id: doc.id,
         name: doc.name,
         barcode: doc.barcode,
-        dateOfScan: doc.date_of_scan,
-        dateOfReceipt: doc.date_of_receipt,
+        dateOfScan: doc.dateOfScan,
+        dateOfReceipt: doc.dateOfReceipt,
         note: doc.note,
-        labels: docMaAPI.docs.readAllLabels(doc.id), // ref auf Array
-        accountData: docMaAPI.docs.readAccountData(doc.id), // ref auf Obj 
-        docNumbers: docMaAPI.docs.readAllDocNumbers(doc.id), // ref auf Array
+        labels: doc.labels,
+        accountData: doc.accountData,
+        docNumbers: doc.docNumbers,
       };
+      $scope.docData = doc;
 
       $scope.docsCtrl = new DocEventHandlers(
         $log, $timeout, utils, docMaAPI, doc, $scope.docData,
@@ -88,6 +95,11 @@ m.controller('VirtualDirDetailViewCtrl', [
       );
       $scope.accountDataCtrl = new AccountDataEventHandlers(
         $log, $timeout, docMaAPI, utils, $scope.docData
+      );
+
+      $scope.fileListCtrl = new FileListEventHandlers(
+        $location, $log, $route, docMaAPI, filterHistory, utils,
+        virtualDir, $scope.dirName, $scope.dirPos
       );
 
       // Load labels for label selection
@@ -190,12 +202,14 @@ m.controller('VirtualDirFindNewDocsCtrl', [
   '$log',
   '$scope',
   '$rootScope',
+  'filterHistory',
   'virtualDir',
   'docMaAPI',
   'utils', function(
     $log,
     $scope,
     $rootScope,
+    filterHistory,
     virtualDir,
     docMaAPI,
     utils) {
@@ -209,10 +223,29 @@ m.controller('VirtualDirFindNewDocsCtrl', [
 
       return docMaAPI.docs.findDocsByLabel(labels[0].id).$promise;
     }).then(function(resp) {
-      var docs = resp.data
+      var docs = _.map(resp.data, function(doc, i, l) {
+        return {
+          id: doc.id,
+          name: doc.name,
+          barcode: doc.barcode,
+          dateOfScan: doc.date_of_scan,
+          dateOfReceipt: doc.date_of_receipt,
+          note: doc.note,
+          labels: docMaAPI.docs.readAllLabels(doc.id), // ref auf Array
+          accountData: docMaAPI.docs.readAccountData(doc.id), // ref auf Obj 
+          docNumbers: docMaAPI.docs.readAllDocNumbers(doc.id), // ref auf Array
+        };
+      });
 
       virtualDir.mkdir('Neu', docs);
-      $rootScope.searchResultLength = labels.length;
+      filterHistory.push({
+        labels: 'Neu',
+        docNumbers: '',
+        dateOfScan: {
+          from: '',
+          to: '',
+        },
+      });
 
       utils.go2('/virtual_dir/Neu/0');
     }).catch(function(resp) {
@@ -677,3 +710,145 @@ var DocNumbersEventHandlers = function($log, $timeout, docMaAPI, utils, docData)
   };
 }
 
+var FileListEventHandlers = function(
+  $location,
+  $log,
+  $route,
+  docMaAPI,
+  filterHistory,
+  utils,
+  virtualDir,
+  dirName,
+  currPos) {
+
+  var THAT = this;
+  console.log('newest', filterHistory.newest(), filterHistory.log);
+
+  this.filter = filterHistory.length === 0 ? {
+    labels: "",
+    docNumbers: "",
+    dateOfScan: {
+      from: "",
+      to: "",
+    },
+  } : filterHistory.newest();
+
+  this.filterHistory = {
+    updateFilter: function(o) {
+      if (!angular.isDefined(o)) {
+        return
+      }
+
+      THAT.filter = o;
+    },
+
+    next: function() {
+      var n = filterHistory.next();
+      console.log('next ', n, filterHistory.log);
+      this.updateFilter(n);
+    },
+
+    last: function() {
+      var l = filterHistory.last()
+      console.log('last ', l, filterHistory.log);
+      this.updateFilter(l);
+    }
+  };
+
+  this.cal = {
+    from: false,
+    to: false,
+    format: 'dd.MM.yyyy',
+    opts: {
+      startingDay: 1,
+    }
+  };
+
+  this.go2 = function(i) {
+    var url = '/virtual_dir/' + dirName + '/' + i;
+    return utils.go2(url);
+  };
+
+  this.currFile = function(i) {
+    if (currPos == i) {
+      return true;
+    }
+
+    return false;
+  };
+
+  this.clear = function() {
+    this.filter = {
+      labels: "",
+      docNumbers: "",
+      dateOfScan: {
+        from: "",
+        to: "",
+      },
+    };
+  };
+
+  this.search = function() {
+    var that = this;
+
+    var yearZero = '0001-01-01T00:00:00.000Z';
+    var from = this.filter.dateOfScan.from;
+    if (from === "") {
+      from = yearZero;
+    }
+    var to = this.filter.dateOfScan.to;
+    if (to === "") {
+      to = yearZero;
+    }
+    var query = {
+      labels: this.filter.labels,
+      doc_numbers: this.filter.docNumbers,
+      date_of_scan: {
+        from: from,
+        to: to,
+      },
+    }
+    docMaAPI.search.docs(query).$promise.then(function(resp) {
+      if (resp.data.length > 0) {
+        var docs = _.map(resp.data, function(doc, i, l) {
+          return {
+            id: doc.id,
+            name: doc.name,
+            barcode: doc.barcode,
+            dateOfScan: doc.date_of_scan,
+            dateOfReceipt: doc.date_of_receipt,
+            note: doc.note,
+            labels: docMaAPI.docs.readAllLabels(doc.id), // ref auf Array
+            accountData: docMaAPI.docs.readAccountData(doc.id), // ref auf Obj 
+            docNumbers: docMaAPI.docs.readAllDocNumbers(doc.id), // ref auf Array
+          };
+        });
+        virtualDir.update(dirName, docs)
+        var url = '/virtual_dir/' + dirName + '/0';
+        if ($location.url() === url) {
+          $route.reload();
+        } else {
+          that.go2(0)
+        }
+        filterHistory.push(that.filter);
+        console.log('push filter', that.filter, filterHistory.log);
+
+      } else {
+        utils.globalErrMsg("No docs found");
+      }
+    }).catch(function(resp) {
+      $log.error(resp.data.message);
+      utils.globalErrMsg("No docs found");
+    });
+  };
+
+  // Filter label list
+  this.keyctrl = function(e) {
+    switch (e.which) {
+      // enter, start append process
+      case 13:
+        this.search();
+        break;
+    }
+  };
+}

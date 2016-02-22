@@ -10,7 +10,7 @@
 --!>
 <div id="workspace" class="container-fluid">
   <shortcuts></shortcuts>
-  <div id="doc-data" class="col-md-3"> 
+	<div id="file-list" class="col-md-3">
     <h4 id="filename">
       <button class="btn-lastfile" ng-click="docsCtrl.prevDoc()">
 				<span class="glyphicon glyphicon-chevron-left"></span>
@@ -20,6 +20,107 @@
 				<span class="glyphicon glyphicon-chevron-right"></span>
 			</button>
     </h4>
+		<div id="filter">
+		
+			<form>
+
+				<div class="form-group">
+					<label for="filter-labels">Labels:</label>
+					<input id="filter-labels"type="text" class="form-control" placeholder="Labels..."
+					       ng-model="fileListCtrl.filter.labels"
+								 ng-keypress="fileListCtrl.keyctrl($event)">
+				</div>
+				<div class="form-group">
+					<label for="filter-doc-number">Belegnummern:</label>
+					<input id="filter-doc-number" type="text" class="form-control" placeholder="Belegenummern..."
+								 ng-model="fileListCtrl.filter.docNumbers"
+								 ng-keypress="fileListCtrl.keyctrl($event)">
+				</div>
+
+				<div class="form-group">
+					<label for="filter-date-of-scan">Scandatum:</label>
+					<div class="input-group">
+						<input id="filter-date-of-scan" class="form-control" placeholder="Von..."
+									 ng-model="fileListCtrl.filter.dateOfScan.from"
+									 ng-keypress="fileListCtrl.keyctrl($event)"
+									 uib-datepicker-popup="{{fileListCtrl.cal.format}}"
+									 is-open="fileListCtrl.cal.from"
+									 datepicker-options="fileListCtrl.cal.opts"
+									 ng-required="true"
+									 close-text="Close">
+						<span class="input-group-btn">
+							<button type="button" class="btn btn-default" ng-click="fileListCtrl.cal.from=true">
+								<i class="glyphicon glyphicon-calendar"></i>
+							</button>
+						</span>
+					</div>
+					<div class="input-group">
+						<input id="filter-date-of-scan" class="form-control" placeholder="Bis..."
+									 ng-model="fileListCtrl.filter.dateOfScan.to"
+									 ng-keypress="fileListCtrl.keyctrl($event)"
+									 uib-datepicker-popup="{{fileListCtrl.cal.format}}"
+									 is-open="fileListCtrl.cal.to"
+									 datepicker-options="fileListCtrl.cal.opts"
+									 ng-required="true"
+									 close-text="Close">
+						<span class="input-group-btn">
+							<button type="button" class="btn btn-default" ng-click="fileListCtrl.cal.to=true">
+								<i class="glyphicon glyphicon-calendar"></i>
+							</button>
+						</span>
+					</div>
+				</div>
+
+				<div class="btn-group" role="group">
+					<button type="button" class="btn btn-default" ng-click="fileListCtrl.filterHistory.last()">
+						<span class="glyphicon glyphicon-chevron-left"></span>
+					</button>
+					<button type="button" class="btn btn-default" ng-click="fileListCtrl.search()">
+						<span class="glyphicon glyphicon-search"></span>
+					</button>
+					<button type="button" class="btn btn-default" ng-click="fileListCtrl.clear()">
+						<span class="glyphicon glyphicon-trash"></span>
+					</button>
+					<button type="button" class="btn btn-default" ng-click="fileListCtrl.filterHistory.next()">
+						<span class="glyphicon glyphicon-chevron-right"></span>
+					</button>
+				</div>
+
+			</form>
+		</div>
+
+		<div id="files">
+			<table>
+			<thead>
+				<th>Pos.</th>
+				<th>Scandatum</th>
+				<th>Labels</th>
+			</thead>
+			<tbody>
+			<tr ng-repeat="file in dir"
+					ng-class-odd="'file-list-odd'"
+					ng-click="fileListCtrl.go2($index)"
+					ng-class="{'curr-file': fileListCtrl.currFile($index)}">
+					<td>{{$index}}</td>
+					<td>{{file.dateOfScan|euroDate}}</td>
+					<td>
+						<ul class="file-labels"> 
+							<li ng-repeat="label in file.labels">
+								<span class="label label-primary">
+									{{label.name}}
+								</span>
+							</li>
+						</ul>
+					</td>
+				</tr>
+			</tbody>
+			</table>
+		</div>
+	</div>
+  <div id="fileviewerspace" class="col-md-7">
+  <iframe id="pdfviewer" ng-src="{{ pdf.url }}"></iframe>
+  </div>
+  <div id="doc-data" class="col-md-2"> 
     <div id="section-labels">
     <header class="section-head">
         Labels 
@@ -156,8 +257,5 @@
 				</textarea>
       </div>
     </div>
-  </div>
-  <div id="fileviewerspace" class="col-md-9">
-  <iframe id="pdfviewer" ng-src="{{ pdf.url }}"></iframe>
   </div>
 </div>
