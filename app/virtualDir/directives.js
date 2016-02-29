@@ -90,8 +90,8 @@ m.directive('shortcuts', [
               break;
             // key a
             case 65:
-              joinLabel(scope.docData, 'Buchungsbeleg');
-              detachLabel(scope.docData, 'Inbox-Buchhaltung');
+              joinLabel(scope.docData, 'Inbox-Buchhaltung');
+              detachLabel(scope.docData, 'Buchungsbeleg');
               break;
             // key b
             case 66:
