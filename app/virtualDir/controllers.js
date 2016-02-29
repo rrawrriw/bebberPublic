@@ -49,6 +49,7 @@ m.controller('VirtualDirDetailViewCtrl', [
 
     var setupCtrl = function() {
       if (session.isExpired()) {
+        utils.globalErrMsg('Session is expired');
         utils.go2('/sign_in');
       }
 
@@ -57,12 +58,21 @@ m.controller('VirtualDirDetailViewCtrl', [
       $scope.dirPos = $routeParams.dirPosition;
       try {
         $scope.dir = virtualDir.readDir($scope.dirName)
+        if ($scope.dir.length === 0) {
+          // Create a empty doc
+          doc = {
+            id: undefined,
+            name: 'none',
+            note: '',
+          };
+        } else {
+          doc = $scope.dir[$scope.dirPos];
+        }
       } catch ( e ) {
         $log.error(e);
         utils.globalErrMsg('Cannot load documents');
       }
 
-      doc = $scope.dir[$scope.dirPos];
 
       // Hier werden alle Daten für das Template zusammengefasst.
       // Die in diesem Objekt definierten Attribute werden als
@@ -73,17 +83,6 @@ m.controller('VirtualDirDetailViewCtrl', [
       // Objekt an verschieden EventHandler übergeben diese können
       // dan direkt dieses Objekt manipulieren. 
       // Man könnte es auch ein Proxy-Objekt nennen.
-      $scope.docData = {
-        id: doc.id,
-        name: doc.name,
-        barcode: doc.barcode,
-        dateOfScan: doc.dateOfScan,
-        dateOfReceipt: doc.dateOfReceipt,
-        note: doc.note,
-        labels: doc.labels,
-        accountData: doc.accountData,
-        docNumbers: doc.docNumbers,
-      };
       $scope.docData = doc;
 
       $scope.docsCtrl = new DocEventHandlers(
@@ -237,6 +236,10 @@ m.controller('VirtualDirFindNewDocsCtrl', [
         };
       });
 
+      if (docs.length == 0) {
+        throw new Error('Cannot find any docs');
+      }
+
       virtualDir.mkdir('Neu', docs);
       filterHistory.push({
         labels: 'Neu',
@@ -248,9 +251,18 @@ m.controller('VirtualDirFindNewDocsCtrl', [
       });
 
       utils.go2('/virtual_dir/Neu/0');
-    }).catch(function(resp) {
-      $log.error(resp.data.message);
-      utils.globalErrMsg('Cannot load Neu label');
+    }).catch(function(err) {
+      // if error occurs during request
+      if (angular.isDefined(err.data)) {
+        $log.error(resp.data.message);
+        utils.globalErrMsg('Cannot load Neu label');
+        return
+      }
+
+      utils.globalErrMsg(err.message);
+
+      virtualDir.mkdir('tmp', []);
+      utils.go2('/virtual_dir/tmp/0');
     });
 
   }
@@ -579,7 +591,6 @@ var LabelSelectEventHandlers = function($log, docMaAPI, utils, labels, docData) 
         break;
       // enter, start append process
       case 13:
-        console.log(pos.curr);
         this.joinLabel();
         break;
       // reset filter labels
@@ -722,7 +733,6 @@ var FileListEventHandlers = function(
   currPos) {
 
   var THAT = this;
-  console.log('newest', filterHistory.newest(), filterHistory.log);
 
   this.filter = filterHistory.length === 0 ? {
     labels: "",
@@ -744,13 +754,11 @@ var FileListEventHandlers = function(
 
     next: function() {
       var n = filterHistory.next();
-      console.log('next ', n, filterHistory.log);
       this.updateFilter(n);
     },
 
     last: function() {
       var l = filterHistory.last()
-      console.log('last ', l, filterHistory.log);
       this.updateFilter(l);
     }
   };
@@ -831,7 +839,6 @@ var FileListEventHandlers = function(
           that.go2(0)
         }
         filterHistory.push(that.filter);
-        console.log('push filter', that.filter, filterHistory.log);
 
       } else {
         utils.globalErrMsg("No docs found");
