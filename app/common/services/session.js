@@ -18,7 +18,7 @@ m.factory('session', [function() {
 
     isExpired: function() {
       var now = new Date();
-      return (this.expires.getDate() < now.getDate());
+      return (this.expires.getTime() < now.getTime());
     },
   };
 }
