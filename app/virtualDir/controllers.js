@@ -58,6 +58,11 @@ m.controller('VirtualDirDetailViewCtrl', [
       $scope.dirPos = $routeParams.dirPosition;
       try {
         $scope.dir = virtualDir.readDir($scope.dirName)
+        $scope.dir.sort(function(a, b) {
+          var d1 = new Date(a.dateOfReceipt);
+          var d2 = new Date(b.dateOfReceipt);
+          return d1.getTime() - d2.getTime();
+        });
         if ($scope.dir.length === 0) {
           // Create a empty doc
           doc = {
