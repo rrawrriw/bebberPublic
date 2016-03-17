@@ -618,6 +618,14 @@ var DocEventHandlers = function($log, $timeout, utils, docMaAPI, doc, docData, d
 
   this.glowGreen = false;
 
+  this.validFilename = function(name) {
+    if (name.match(/\d{8}_\d{7}\.\w*/).length > 0) {
+      return true
+    }
+
+    return false
+  }
+
   this.nextDoc = function() {
     var curr = posCount.down();
     utils.go2('/virtual_dir/' + dirName + '/' + curr);

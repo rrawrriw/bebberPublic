@@ -143,6 +143,10 @@ nav#box {
   cursor: pointer;
 }
 
+#filename .wrong-filename {
+	color: red;
+}
+
 
 #fileviewerspace {
   padding-top: 0;
