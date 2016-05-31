@@ -134,6 +134,9 @@ m.controller('VirtualDirDetailViewCtrl', [
               docData: function() {
                 return $scope.docData;
               },
+              docsCtrl: function() {
+                return $scope.docsCtrl;
+              },
             },
           });
 
@@ -143,9 +146,6 @@ m.controller('VirtualDirDetailViewCtrl', [
                 return v.name !== $scope.docData.name;
               }));
               $scope.docsCtrl.nextDoc();
-            }
-            if (result.action === 'rename') {
-              $scope.docData.name = result.newName;
             }
           });
         },
@@ -287,12 +287,14 @@ m.controller('changeDocNameModalCtrl', [
   '$uibModalInstance',
   'docMaAPI',
   'utils',
-  'docData', function($log,
+  'docData',
+  'docsCtrl', function($log,
     $scope,
     $uibModalInstance,
     docMaAPI,
     utils,
-    docData) {
+    docData,
+    docsCtrl) {
 
     $scope.newDocName = docData.name;
 
@@ -308,6 +310,12 @@ m.controller('changeDocNameModalCtrl', [
           action: 'rename',
           newName: name,
         });
+
+        var barcode = parseBarcode(name);
+        if (barcode !== "") {
+          docData.barcode = barcode;
+          docsCtrl.updateDoc();
+        }
       }).catch(function(resp) {
         $log.error(resp.data.message);
         utils.globalErrMsg('Couldn\'t change document name');
@@ -332,6 +340,15 @@ m.controller('changeDocNameModalCtrl', [
       if (keyEvent.which === 13) {
         $scope.save();
       }
+    };
+
+    var parseBarcode = function(name) {
+      var r = name.match(/\d{8}_(\d{7})\.\w*/);
+      if (r === null) {
+        return "";
+      }
+
+      return r[1];
     };
 
   }
