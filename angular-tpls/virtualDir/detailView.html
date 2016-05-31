@@ -15,7 +15,7 @@
       <button class="btn-lastfile" ng-click="docsCtrl.prevDoc()">
 				<span class="glyphicon glyphicon-chevron-left"></span>
 			</button>
-			<span ng-click="modals.changeDocName.open()"
+			<span ng-click="modals.changeDocNameOrRemoveDoc.open()"
 					  ng-class="{'wrong-filename': !docsCtrl.validFilename(docData.name)}">
 						{{docData.name}}
 			</span>

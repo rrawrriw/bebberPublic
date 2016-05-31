@@ -1,19 +1,35 @@
 <div class="modal-header">
   <button type="button" class="close" ng-click="cancel()"><span >&times;</span></button>
-  <h4 class="modal-title" id="myModalLabel">Umbenennen</h4>
+  <h4 class="modal-title" id="myModalLabel">Bearbeiten</h4>
 </div>
-<div class="modal-body">
-  <div class="input-group">
-    <input type="text" class="form-control"
-           ng-model="newDocName"
-           ng-keypress="keyEvents($event)"
-           focus-me="{{opened}}">
-    <span class="input-group-btn">
-      <button class="btn btn-default" type="button" ng-click="save()">OK!</button>
-    </span>
+
+<div class="panel panel-default modal-section" style="margin-top:10px">
+  <div class="panel-heading">Dokument umbenennen</div>
+  <div class="panel-body">
+			<div class="modal-body">
+				<div class="input-group">
+					<input type="text" class="form-control"
+								 ng-model="newDocName"
+								 ng-keypress="keyEvents($event)"
+								 focus-me="{{opened}}">
+					<span class="input-group-btn">
+						<button class="btn btn-default" type="button" ng-click="save()">OK!</button>
+					</span>
+				</div>
+			</div>
+	</div>
+</div>
+
+<div class="panel panel-default modal-section">
+  <div class="panel-heading">Dokument löschen</div>
+  <div class="panel-body">
+		<div>
+			<button class="btn btn-danger" ng-click="remove()">Löschen</button>
+		</div>
   </div>
 </div>
+
 <div class="modal-footer">
-  <button class="btn btn-primary" ng-click="cancel()">Cancel</button>
+	<button class="btn btn-primary" ng-click="cancel()">Cancel</button>
 </div>
 

@@ -123,7 +123,7 @@ m.controller('VirtualDirDetailViewCtrl', [
 
     // EventHandler for modals
     $scope.modals = {
-      changeDocName: {
+      changeDocNameOrRemoveDoc: {
         modal: undefined,
         open: function() {
           this.modal = $uibModal.open({
@@ -137,8 +137,16 @@ m.controller('VirtualDirDetailViewCtrl', [
             },
           });
 
-          this.modal.result.then(function(newName) {
-            doc.name = newName;
+          this.modal.result.then(function(result) {
+            if (result.action === 'remove') {
+              virtualDir.update($scope.dirName, _.filter($scope.dir, function(v) {
+                return v.name !== $scope.docData.name;
+              }));
+              $scope.docsCtrl.nextDoc();
+            }
+            if (result.action === 'rename') {
+              $scope.docData.name = result.newName;
+            }
           });
         },
       },
@@ -296,11 +304,27 @@ m.controller('changeDocNameModalCtrl', [
       var name = $scope.newDocName;
       docMaAPI.docs.renameDoc(docData.id, name).$promise.then(function() {
         docData.name = name;
-        $uibModalInstance.close(name);
+        $uibModalInstance.close({
+          action: 'rename',
+          newName: name,
+        });
       }).catch(function(resp) {
         $log.error(resp.data.message);
         utils.globalErrMsg('Couldn\'t change document name');
       });
+    };
+
+    $scope.remove = function() {
+      if (confirm("You are sure?")) {
+        docMaAPI.docs.deleteDoc(docData.id).then(function() {
+          $uibModalInstance.close({
+            action: 'remove',
+          });
+        }).catch(function(resp) {
+          $log.error(resp.data.message);
+          utils.globalErrMsg('Couldn\'t remove document');
+        });
+      }
     };
 
     $scope.keyEvents = function(keyEvent) {
@@ -619,7 +643,7 @@ var DocEventHandlers = function($log, $timeout, utils, docMaAPI, doc, docData, d
   this.glowGreen = false;
 
   this.validFilename = function(name) {
-    if (name.match(/\d{8}_\d{7}\.\w*/).length > 0) {
+    if (name.match(/\d{8}_\d{7}\.\w*/) !== null) {
       return true
     }
 
